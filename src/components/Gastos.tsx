@@ -22,6 +22,10 @@ import {
   FaMoon,
   FaSun,
   FaTrash,
+  FaShoppingCart, // Adicionado
+  FaUtensils,     // Adicionado
+  FaBus,          // Adicionado
+  FaHome,          //Adicionado
 } from 'react-icons/fa';
 
 ChartJS.register(ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement, Title);
@@ -57,16 +61,21 @@ function categorizarGasto(descricao: string): string {
   return 'outros';
 }
 
-// Simplificando os ícones sem forwardRef
-const WalletIcon = ({ className }: { className?: string }) => <FaWallet className={className} />;
-const ChartPieIcon = ({ className }: { className?: string }) => <FaChartPie className={className} />;
-const FilterIcon = ({ className }: { className?: string }) => <FaFilter className={className} />;
-const FileAltIcon = ({ className }: { className?: string }) => <FaFileAlt className={className} />;
-const CheckCircleIcon = ({ className }: { className?: string }) => <FaCheckCircle className={className} />;
-const TimesCircleIcon = ({ className }: { className?: string }) => <FaTimesCircle className={className} />;
-const MoonIcon = ({ className }: { className?: string }) => <FaMoon className={className} />;
-const SunIcon = ({ className }: { className?: string }) => <FaSun className={className} />;
-const TrashIcon = ({ className }: { className?: string }) => <FaTrash className={className} />;
+// Simplificando os ícones, usando diretamente os componentes do react-icons
+const WalletIcon = FaWallet;
+const ChartPieIcon = FaChartPie;
+const FilterIcon = FaFilter;
+const FileAltIcon = FaFileAlt;
+const CheckCircleIcon = FaCheckCircle;
+const TimesCircleIcon = FaTimesCircle;
+const MoonIcon = FaMoon;
+const SunIcon = FaSun;
+const TrashIcon = FaTrash;
+const ShoppingCartIcon = FaShoppingCart;
+const UtensilsIcon = FaUtensils;
+const BusIcon = FaBus;
+const HomeIcon = FaHome;
+
 
 const Gastos: React.FC = () => {
   const [gastos, setGastos] = useState<Gasto[]>([]);
@@ -321,7 +330,7 @@ const Gastos: React.FC = () => {
   return (
     <div className={`${styles.container} ${isDarkMode ? styles['dark-mode'] : ''}`}>
       <header className={styles.header}>
-        <WalletIcon className={`${styles.icon} ${styles.hoverScale}`} />
+        <WalletIcon className={styles.icon} />
         <div className={styles.headerText}>
           <h1>Finanças em Foco</h1>
           <span className={styles.slogan}>Seu controle financeiro, simplificado.</span>
@@ -330,7 +339,7 @@ const Gastos: React.FC = () => {
           <a href="#">Home</a>
           <a href="#">Relatórios</a>
           <a href="#">Configurações</a>
-          <button onClick={toggleDarkMode} className={styles.darkModeToggle} aria-label={isDarkMode ? 'Desativar modo noturno' : 'Ativar modo noturno'}>
+          <button onClick={toggleDarkMode} className={styles.darkModeToggle}>
             {isDarkMode ? <SunIcon className={styles.darkModeIcon} /> : <MoonIcon className={styles.darkModeIcon} />}
           </button>
         </nav>
@@ -380,7 +389,6 @@ const Gastos: React.FC = () => {
             value={novoGasto}
             name="descricaoGasto"
             onChange={handleInputChange}
-            whileFocus={{ scale: 1.03 }}
             className={styles.inputField}
           />
           <motion.input
@@ -389,12 +397,13 @@ const Gastos: React.FC = () => {
             value={valorGasto}
             name="valorGasto"
             onChange={handleInputChange}
-            whileFocus={{ scale: 1.03 }}
             className={styles.inputField}
           />
           {categoriaPrevista && <div className={styles.categoriaPrevista}>Categoria: {categoriaPrevista}</div>}
           <div className={styles.prioridadeInput}>
-            <label htmlFor="prioridadeGasto" className={styles.prioridadeLabel}>Prioridade:</label>
+            <label htmlFor="prioridadeGasto" className={styles.prioridadeLabel}>
+              Prioridade:
+            </label>
             <select
               id="prioridadeGasto"
               value={prioridadeGasto}
@@ -405,47 +414,19 @@ const Gastos: React.FC = () => {
               <option value="naoEssencial">Não Essencial</option>
             </select>
           </div>
-          <motion.button
-            onClick={adicionarGasto}
-            whileTap={{ scale: 0.95 }}
-            disabled={loading}
-            className={styles.addButton}
-          >
+          <motion.button onClick={adicionarGasto} className={styles.addButton}>
             {loading ? <div className={styles.spinner}></div> : 'Adicionar Gasto'}
           </motion.button>
-          {feedback && (
-            <motion.div
-              className={`${styles.feedback} ${feedback === 'success' ? styles.success : styles.error}`}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -20 }}
-              transition={{ duration: 0.4, ease: 'easeInOut' }}
-            >
-              {feedback === 'success' ? (
-                <>
-                  <CheckCircleIcon className={styles.successIcon} /> Gasto adicionado com sucesso!
-                </>
-              ) : (
-                <>
-                  <TimesCircleIcon className={styles.errorIcon} /> Valor inválido!
-                </>
-              )}
-            </motion.div>
-          )}
         </section>
 
         <section className={styles.gastosRecentes}>
           <h2>Gastos Recentes</h2>
           <div className={styles.tableContainer}>
-            <motion.table
-              className={styles.table}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0, transition: { delay: 0.2 } }}
-            >
+            <table className={styles.table}>
               <thead>
                 <tr>
                   <th>Descrição</th>
-                  <th className={styles.valorHeader}>Valor</th>
+                  <th>Valor</th>
                   <th>Categoria</th>
                   <th>Data</th>
                   <th>Prioridade</th>
@@ -454,38 +435,31 @@ const Gastos: React.FC = () => {
               </thead>
               <tbody>
                 {gastosFiltrados.map((gasto) => (
-                  <motion.tr
-                    key={gasto.id}
-                    initial={{ opacity: 0, scale: 0.95 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    exit={{ opacity: 0, scale: 0.9 }}
-                    transition={{ duration: 0.2 }}
-                    whileHover={{ scale: 1.02 }}
-                  >
+                  <tr key={gasto.id}>
                     <td>{gasto.descricao}</td>
-                    <td className={styles.valorCell}>R$ {gasto.valor.toFixed(2)}</td>
+                    <td>R$ {gasto.valor.toFixed(2)}</td>
                     <td style={{ color: coresCategorias[gasto.categoria] }}>{gasto.categoria}</td>
                     <td>{gasto.data}</td>
                     <td>
                       <span
-                        className={gasto.prioridade === 'essencial' ? styles.prioridadeEssencial : styles.prioridadeNaoEssencial}
+                        className={
+                          gasto.prioridade === 'essencial'
+                            ? styles.prioridadeEssencial
+                            : styles.prioridadeNaoEssencial
+                        }
                       >
                         {gasto.prioridade}
                       </span>
                     </td>
                     <td>
-                      <motion.button
-                        onClick={() => removerGasto(gasto.id)}
-                        whileTap={{ scale: 0.9 }}
-                        className={styles.deleteButton}
-                      >
+                      <button onClick={() => removerGasto(gasto.id)} className={styles.deleteButton}>
                         <TrashIcon className={styles.deleteIcon} />
-                      </motion.button>
+                      </button>
                     </td>
-                  </motion.tr>
+                  </tr>
                 ))}
               </tbody>
-            </motion.table>
+            </table>
           </div>
         </section>
 
