@@ -1,3 +1,5 @@
+/* src/index.css */
+
 /* Reset básico */
 * {
   margin: 0;
@@ -10,6 +12,10 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   background-color: #f0f2f5; /* Mesmo do App.css para consistência */
+    /* Solução combinada */
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
 }
 
 /* Tipografia (opcional - ajuste se quiser) */

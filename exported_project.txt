@@ -1,556 +1,517 @@
 --- src\components\Gastos.tsx ---
 
+// src/components/Gastos.tsx
 import React, { useState, useEffect, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import {
-  Chart as ChartJS,
-  ArcElement,
-  Tooltip,
-  Legend,
-  CategoryScale,
-  LinearScale,
-  BarElement,
-  Title,
+    Chart as ChartJS,
+    ArcElement,
+    Tooltip,
+    Legend,
+    CategoryScale,
+    LinearScale,
+    BarElement,
+    Title,
 } from 'chart.js';
 import { Pie, Bar } from 'react-chartjs-2';
 import styles from '../styles/Gastos.module.css';
 import {
-  FaWallet,
-  FaChartPie,
-  FaFilter,
-  FaFileAlt,
-  FaCheckCircle,
-  FaTimesCircle,
-  FaMoon,
-  FaSun,
-  FaTrash,
+    FaWallet,
+    FaChartPie,
+    FaFilter,
+    FaFileAlt,
+    FaTrash,
+    FaPlusCircle, // Ícone de adicionar
+    FaMoon,
+    FaSun,
 } from 'react-icons/fa';
 
 ChartJS.register(ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement, Title);
 
 interface Gasto {
-  id: number;
-  descricao: string;
-  valor: number;
-  categoria: string;
-  data: string;
-  prioridade: 'essencial' | 'naoEssencial';
+    id: number;
+    descricao: string;
+    valor: number;
+    categoria: string;
+    data: string;
+    prioridade: 'essencial' | 'naoEssencial';
 }
 
 const categorias: { [key: string]: string[] } = {
-  alimentacao: ['restaurante', 'mercado', 'café', 'comida', 'delivery'],
-  transporte: ['uber', 'ônibus', 'metrô', 'combustível', 'taxi', 'estacionamento'],
-  compras: ['roupa', 'eletrônicos', 'livro', 'presente', 'loja'],
-  lazer: ['cinema', 'show', 'parque', 'viagem', 'hotel', 'jogo'],
-  saude: ['farmácia', 'médico', 'hospital', 'plano', 'consulta', 'exame'],
-  educacao: ['escola', 'faculdade', 'curso', 'material', 'livro'],
-  moradia: ['aluguel', 'condomínio', 'conta', 'luz', 'água', 'internet'],
-  servicos: ['assinatura', 'streaming', 'academia', 'manutenção'],
-  outros: [],
+    alimentacao: ['restaurante', 'mercado', 'café', 'comida', 'delivery'],
+    transporte: ['uber', 'ônibus', 'metrô', 'combustível', 'taxi', 'estacionamento'],
+    compras: ['roupa', 'eletrônicos', 'livro', 'presente', 'loja'],
+    lazer: ['cinema', 'show', 'parque', 'viagem', 'hotel', 'jogo'],
+    saude: ['farmácia', 'médico', 'hospital', 'plano', 'consulta', 'exame'],
+    educacao: ['escola', 'faculdade', 'curso', 'material', 'livro'],
+    moradia: ['aluguel', 'condomínio', 'conta', 'luz', 'água', 'internet'],
+    servicos: ['assinatura', 'streaming', 'academia', 'manutenção'],
+    outros: [],
 };
 
 function categorizarGasto(descricao: string): string {
-  const descLower = descricao.toLowerCase();
-  for (const cat in categorias) {
-    if (categorias[cat].some((palavra) => descLower.includes(palavra))) {
-      return cat;
+    const descLower = descricao.toLowerCase();
+    for (const cat in categorias) {
+        if (categorias[cat].some((palavra) => descLower.includes(palavra))) {
+            return cat;
+        }
     }
-  }
-  return 'outros';
+    return 'outros';
 }
 
-// Simplificando os ícones sem forwardRef
-const WalletIcon = ({ className }: { className?: string }) => <FaWallet className={className} />;
-const ChartPieIcon = ({ className }: { className?: string }) => <FaChartPie className={className} />;
-const FilterIcon = ({ className }: { className?: string }) => <FaFilter className={className} />;
-const FileAltIcon = ({ className }: { className?: string }) => <FaFileAlt className={className} />;
-const CheckCircleIcon = ({ className }: { className?: string }) => <FaCheckCircle className={className} />;
-const TimesCircleIcon = ({ className }: { className?: string }) => <FaTimesCircle className={className} />;
-const MoonIcon = ({ className }: { className?: string }) => <FaMoon className={className} />;
-const SunIcon = ({ className }: { className?: string }) => <FaSun className={className} />;
-const TrashIcon = ({ className }: { className?: string }) => <FaTrash className={className} />;
-
 const Gastos: React.FC = () => {
-  const [gastos, setGastos] = useState<Gasto[]>([]);
-  const [novoGasto, setNovoGasto] = useState('');
-  const [valorGasto, setValorGasto] = useState('');
-  const [categoriaPrevista, setCategoriaPrevista] = useState('');
-  const [filtroCategoria, setFiltroCategoria] = useState('todas');
-  const [filtroPeriodo, setFiltroPeriodo] = useState('todos');
-  const [feedback, setFeedback] = useState<'success' | 'error' | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [isDarkMode, setIsDarkMode] = useState(
-    () => typeof localStorage !== 'undefined' && localStorage.getItem('darkMode') === 'true'
-  );
-  const [metaEconomiaMensal, setMetaEconomiaMensal] = useState<number>(1000);
-  const [prioridadeGasto, setPrioridadeGasto] = useState<'essencial' | 'naoEssencial'>('naoEssencial');
-  const [mediaGastosMensal, setMediaGastosMensal] = useState<number>(0);
+    const [gastos, setGastos] = useState<Gasto[]>([]);
+    const [novoGasto, setNovoGasto] = useState('');
+    const [valorGasto, setValorGasto] = useState('');
+    const [categoriaPrevista, setCategoriaPrevista] = useState('');
+    const [filtroCategoria, setFiltroCategoria] = useState('todas');
+    const [filtroPeriodo, setFiltroPeriodo] = useState('todos');
+    const [loading, setLoading] = useState(false);
+    const [isDarkMode, setIsDarkMode] = useState(
+        () => typeof localStorage !== 'undefined' && localStorage.getItem('darkMode') === 'true'
+    );
+    const [metaEconomiaMensal, setMetaEconomiaMensal] = useState<number>(1000);
+    const [prioridadeGasto, setPrioridadeGasto] = useState<'essencial' | 'naoEssencial'>('naoEssencial');
+    const [mediaGastosMensal, setMediaGastosMensal] = useState<number>(0);
+    const [isModalOpen, setIsModalOpen] = useState(false); // Estado para controlar o modal
 
-  useEffect(() => {
-    const initialExpenses: Gasto[] = [
-      { id: 1, descricao: 'Supermercado Extra', valor: 325.80, categoria: 'alimentacao', data: '2024-01-05', prioridade: 'essencial' },
-      { id: 2, descricao: 'Uber - Viagem ao centro', valor: 32.50, categoria: 'transporte', data: '2024-01-06', prioridade: 'naoEssencial' },
-      { id: 3, descricao: 'Cinema com amigos', valor: 75.00, categoria: 'lazer', data: '2024-01-07', prioridade: 'naoEssencial' },
-      { id: 4, descricao: 'Farmácia - Remédios', valor: 120.30, categoria: 'saude', data: '2024-01-10', prioridade: 'essencial' },
-      { id: 5, descricao: 'Compra online - Livro', valor: 45.90, categoria: 'compras', data: '2024-01-12', prioridade: 'naoEssencial' },
-      { id: 6, descricao: 'Restaurante Italiano', valor: 180.00, categoria: 'alimentacao', data: '2024-01-15', prioridade: 'naoEssencial' },
-      { id: 7, descricao: 'Gasolina - Posto Shell', valor: 200.00, categoria: 'transporte', data: '2024-01-18', prioridade: 'essencial' },
-      { id: 8, descricao: 'Netflix - Assinatura', valor: 39.90, categoria: 'servicos', data: '2024-01-20', prioridade: 'naoEssencial' },
-      { id: 9, descricao: 'Academia - Mensalidade', valor: 110.00, categoria: 'servicos', data: '2024-01-22', prioridade: 'naoEssencial' },
-      { id: 10, descricao: 'Aluguel do apartamento', valor: 1200.00, categoria: 'moradia', data: '2024-01-25', prioridade: 'essencial' },
-      { id: 11, descricao: 'Conta de luz', valor: 185.50, categoria: 'moradia', data: '2024-01-28', prioridade: 'essencial' },
-      { id: 12, descricao: 'Curso online de Inglês', valor: 250.00, categoria: 'educacao', data: '2024-01-30', prioridade: 'naoEssencial' },
-      { id: 13, descricao: 'Café da manhã na padaria', valor: 15.00, categoria: 'alimentacao', data: '2024-02-02', prioridade: 'naoEssencial' },
-      { id: 14, descricao: 'Uber - Volta para casa', valor: 28.00, categoria: 'transporte', data: '2024-02-03', prioridade: 'naoEssencial' },
-      { id: 15, descricao: 'Presente de aniversário', valor: 80.00, categoria: 'compras', data: '2024-02-05', prioridade: 'naoEssencial' },
-      { id: 16, descricao: 'Consulta médica', valor: 150.00, categoria: 'saude', data: '2024-02-08', prioridade: 'essencial' },
-      { id: 17, descricao: 'Ingressos para show', valor: 200.00, categoria: 'lazer', data: '2024-02-10', prioridade: 'naoEssencial' },
-      { id: 18, descricao: 'Mercado do mês', valor: 450.00, categoria: 'alimentacao', data: '2024-02-12', prioridade: 'essencial' },
-      { id: 19, descricao: 'Oficina mecânica', valor: 300.00, categoria: 'transporte', data: '2024-02-15', prioridade: 'essencial' },
-      { id: 20, descricao: 'Spotify - Assinatura', valor: 19.90, categoria: 'servicos', data: '2024-02-18', prioridade: 'naoEssencial' },
-      { id: 21, descricao: 'Condomínio', valor: 400.00, categoria: 'moradia', data: '2024-02-20', prioridade: 'essencial' },
-      { id: 22, descricao: 'Material escolar', valor: 120.00, categoria: 'educacao', data: '2024-02-22', prioridade: 'naoEssencial' },
-      { id: 23, descricao: 'Jantar especial', valor: 100.00, categoria: 'alimentacao', data: '2024-02-25', prioridade: 'naoEssencial' },
-      { id: 24, descricao: 'Supermercado', valor: 280.00, categoria: 'alimentacao', data: '2024-03-03', prioridade: 'essencial' },
-      { id: 25, descricao: 'Uber - Ida ao trabalho', valor: 22.00, categoria: 'transporte', data: '2024-03-05', prioridade: 'naoEssencial' },
-      { id: 26, descricao: 'Remédio para dor de cabeça', valor: 35.00, categoria: 'saude', data: '2024-03-07', prioridade: 'essencial' },
-    ];
-    setGastos(initialExpenses);
-  }, []);
+    useEffect(() => {
+        const initialExpenses: Gasto[] = [
+            { id: 1, descricao: 'Supermercado Extra', valor: 325.80, categoria: 'alimentacao', data: '2024-01-05', prioridade: 'essencial' },
+            { id: 2, descricao: 'Uber - Viagem ao centro', valor: 32.50, categoria: 'transporte', data: '2024-01-06', prioridade: 'naoEssencial' },
+            { id: 3, descricao: 'Cinema com amigos', valor: 75.00, categoria: 'lazer', data: '2024-01-07', prioridade: 'naoEssencial' },
+            { id: 4, descricao: 'Farmácia - Remédios', valor: 120.30, categoria: 'saude', data: '2024-01-10', prioridade: 'essencial' },
+            { id: 5, descricao: 'Compra online - Livro', valor: 45.90, categoria: 'compras', data: '2024-01-12', prioridade: 'naoEssencial' },
+            { id: 6, descricao: 'Restaurante Italiano', valor: 180.00, categoria: 'alimentacao', data: '2024-01-15', prioridade: 'naoEssencial' },
+            { id: 7, descricao: 'Gasolina - Posto Shell', valor: 200.00, categoria: 'transporte', data: '2024-01-18', prioridade: 'essencial' },
+            { id: 8, descricao: 'Netflix - Assinatura', valor: 39.90, categoria: 'servicos', data: '2024-01-20', prioridade: 'naoEssencial' },
+            { id: 9, descricao: 'Academia - Mensalidade', valor: 110.00, categoria: 'servicos', data: '2024-01-22', prioridade: 'naoEssencial' },
+            { id: 10, descricao: 'Aluguel do apartamento', valor: 1200.00, categoria: 'moradia', data: '2024-01-25', prioridade: 'essencial' },
+            { id: 11, descricao: 'Conta de luz', valor: 185.50, categoria: 'moradia', data: '2024-01-28', prioridade: 'essencial' },
+            { id: 12, descricao: 'Curso online de Inglês', valor: 250.00, categoria: 'educacao', data: '2024-01-30', prioridade: 'naoEssencial' },
+            { id: 13, descricao: 'Café da manhã na padaria', valor: 15.00, categoria: 'alimentacao', data: '2024-02-02', prioridade: 'naoEssencial' },
+            { id: 14, descricao: 'Uber - Volta para casa', valor: 28.00, categoria: 'transporte', data: '2024-02-03', prioridade: 'naoEssencial' },
+            { id: 15, descricao: 'Presente de aniversário', valor: 80.00, categoria: 'compras', data: '2024-02-05', prioridade: 'naoEssencial' },
+            { id: 16, descricao: 'Consulta médica', valor: 150.00, categoria: 'saude', data: '2024-02-08', prioridade: 'essencial' },
+            { id: 17, descricao: 'Ingressos para show', valor: 200.00, categoria: 'lazer', data: '2024-02-10', prioridade: 'naoEssencial' },
+            { id: 18, descricao: 'Mercado do mês', valor: 450.00, categoria: 'alimentacao', data: '2024-02-12', prioridade: 'essencial' },
+            { id: 19, descricao: 'Oficina mecânica', valor: 300.00, categoria: 'transporte', data: '2024-02-15', prioridade: 'essencial' },
+            { id: 20, descricao: 'Spotify - Assinatura', valor: 19.90, categoria: 'servicos', data: '2024-02-18', prioridade: 'naoEssencial' },
+            { id: 21, descricao: 'Condomínio', valor: 400.00, categoria: 'moradia', data: '2024-02-20', prioridade: 'essencial' },
+            { id: 22, descricao: 'Material escolar', valor: 120.00, categoria: 'educacao', data: '2024-02-22', prioridade: 'naoEssencial' },
+            { id: 23, descricao: 'Jantar especial', valor: 100.00, categoria: 'alimentacao', data: '2024-02-25', prioridade: 'naoEssencial' },
+            { id: 24, descricao: 'Supermercado', valor: 280.00, categoria: 'alimentacao', data: '2024-03-03', prioridade: 'essencial' },
+            { id: 25, descricao: 'Uber - Ida ao trabalho', valor: 22.00, categoria: 'transporte', data: '2024-03-05', prioridade: 'naoEssencial' },
+            { id: 26, descricao: 'Remédio para dor de cabeça', valor: 35.00, categoria: 'saude', data: '2024-03-07', prioridade: 'essencial' },
+        ];
+        setGastos(initialExpenses);
+    }, []);
 
-  useEffect(() => {
-    setCategoriaPrevista(novoGasto.trim() ? categorizarGasto(novoGasto) : '');
-  }, [novoGasto]);
+    useEffect(() => {
+        setCategoriaPrevista(novoGasto.trim() ? categorizarGasto(novoGasto) : '');
+    }, [novoGasto]);
 
-  useEffect(() => {
-    if (typeof localStorage !== 'undefined') {
-      localStorage.setItem('darkMode', String(isDarkMode));
-    }
-  }, [isDarkMode]);
+    useEffect(() => {
+        if (typeof localStorage !== 'undefined') {
+            localStorage.setItem('darkMode', String(isDarkMode));
+        }
+    }, [isDarkMode]);
 
-  useEffect(() => {
-    calcularMediaGastosMensal();
-  }, [gastos]);
+    useEffect(() => {
+        calcularMediaGastosMensal();
+    }, [gastos]);
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    if (name === 'descricaoGasto') setNovoGasto(value);
-    if (name === 'valorGasto') setValorGasto(value);
-    setFeedback(null);
-  };
+    const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const { name, value } = e.target;
+        if (name === 'descricaoGasto') setNovoGasto(value);
+        if (name === 'valorGasto') setValorGasto(value);
+    };
 
-  const adicionarGasto = () => {
-    if (!novoGasto.trim() || !valorGasto.trim()) return;
+    const adicionarGasto = () => {
+        if (!novoGasto.trim() || !valorGasto.trim()) return;
 
-    setLoading(true);
-    setTimeout(() => {
-      const valor = parseFloat(valorGasto.replace(',', '.'));
-      if (isNaN(valor)) {
-        setFeedback('error');
-        setLoading(false);
-        return;
-      }
+        setLoading(true);
+        setTimeout(() => {
+            const valor = parseFloat(valorGasto.replace(',', '.'));
+            if (isNaN(valor)) {
+                setLoading(false);
+                return;
+            }
 
-      const novo: Gasto = {
-        id: Date.now(),
-        descricao: novoGasto,
-        valor,
-        categoria: categorizarGasto(novoGasto),
-        data: new Date().toISOString().split('T')[0],
-        prioridade: prioridadeGasto,
-      };
+            const novo: Gasto = {
+                id: Date.now(),
+                descricao: novoGasto,
+                valor,
+                categoria: categorizarGasto(novoGasto),
+                data: new Date().toISOString().split('T')[0],
+                prioridade: prioridadeGasto,
+            };
 
-      setGastos([...gastos, novo]);
-      setNovoGasto('');
-      setValorGasto('');
-      setFeedback('success');
-      setLoading(false);
-      setTimeout(() => setFeedback(null), 3000);
-    }, 750);
-  };
+            setGastos([...gastos, novo]);
+            setNovoGasto('');
+            setValorGasto('');
+            setLoading(false);
+            setIsModalOpen(false); // Fecha o modal após adicionar
+        }, 750);
+    };
 
-  const removerGasto = (id: number) => {
-    setGastos(gastos.filter((gasto) => gasto.id !== id));
-  };
+    const removerGasto = (id: number) => {
+        setGastos(gastos.filter((gasto) => gasto.id !== id));
+    };
 
-  const gastosFiltrados = useMemo(() => {
-    return gastos.filter((gasto) => {
-      if (filtroCategoria !== 'todas' && gasto.categoria !== filtroCategoria) return false;
-      if (filtroPeriodo === 'todos') return true;
+    const gastosFiltrados = useMemo(() => {
+        return gastos.filter((gasto) => {
+            if (filtroCategoria !== 'todas' && gasto.categoria !== filtroCategoria) return false;
+            if (filtroPeriodo === 'todos') return true;
 
-      const hoje = new Date();
-      const dataGasto = new Date(gasto.data);
+            const hoje = new Date();
+            const dataGasto = new Date(gasto.data);
 
-      if (filtroPeriodo === 'esteMes') {
-        return dataGasto.getMonth() === hoje.getMonth() && dataGasto.getFullYear() === hoje.getFullYear();
-      }
-      if (filtroPeriodo === 'mesPassado') {
-        const mesPassado = new Date(hoje.getFullYear(), hoje.getMonth() - 1, 1);
-        const ultimoDiaMesPassado = new Date(hoje.getFullYear(), hoje.getMonth(), 0);
-        return dataGasto >= mesPassado && dataGasto <= ultimoDiaMesPassado;
-      }
-      return true;
-    });
-  }, [gastos, filtroCategoria, filtroPeriodo]);
+            if (filtroPeriodo === 'esteMes') {
+                return dataGasto.getMonth() === hoje.getMonth() && dataGasto.getFullYear() === hoje.getFullYear();
+            }
+            if (filtroPeriodo === 'mesPassado') {
+                const mesPassado = new Date(hoje.getFullYear(), hoje.getMonth() - 1, 1);
+                const ultimoDiaMesPassado = new Date(hoje.getFullYear(), hoje.getMonth(), 0);
+                return dataGasto >= mesPassado && dataGasto <= ultimoDiaMesPassado;
+            }
+            return true;
+        });
+    }, [gastos, filtroCategoria, filtroPeriodo]);
 
-  const calcularMediaGastosMensal = () => {
-    if (gastos.length === 0) {
-      setMediaGastosMensal(0);
-      return;
-    }
+    const calcularMediaGastosMensal = () => {
+        if (gastos.length === 0) {
+            setMediaGastosMensal(0);
+            return;
+        }
 
-    const totaisMensais: { [key: string]: number } = {};
-    gastos.forEach((gasto) => {
-      const mesAno = gasto.data.substring(0, 7);
-      totaisMensais[mesAno] = (totaisMensais[mesAno] || 0) + gasto.valor;
-    });
+        const totaisMensais: { [key: string]: number } = {};
+        gastos.forEach((gasto) => {
+            const mesAno = gasto.data.substring(0, 7);
+            totaisMensais[mesAno] = (totaisMensais[mesAno] || 0) + gasto.valor;
+        });
 
-    const meses = Object.keys(totaisMensais).length;
-    const somaTotais = Object.values(totaisMensais).reduce((soma, valor) => soma + valor, 0);
-    setMediaGastosMensal(parseFloat((somaTotais / meses).toFixed(2)));
-  };
+        const meses = Object.keys(totaisMensais).length;
+        const somaTotais = Object.values(totaisMensais).reduce((soma, valor) => soma + valor, 0);
+        setMediaGastosMensal(parseFloat((somaTotais / meses).toFixed(2)));
+    };
 
-  const coresCategorias: { [key: string]: string } = {
-    alimentacao: '#F4A261',
-    transporte: '#5C80BC',
-    compras: '#95C623',
-    lazer: '#E76F51',
-    saude: '#74C69D',
-    educacao: '#A37A74',
-    moradia: '#9D6B9A',
-    servicos: '#2A9D8F',
-    outros: '#E63946',
-  };
+    const coresCategorias: { [key: string]: string } = {
+        alimentacao: '#F4A261',
+        transporte: '#5C80BC',
+        compras: '#95C623',
+        lazer: '#E76F51',
+        saude: '#74C69D',
+        educacao: '#A37A74',
+        moradia: '#9D6B9A',
+        servicos: '#2A9D8F',
+        outros: '#E63946',
+    };
 
-  const dadosGraficoPizza = useMemo(() => ({
-    labels: Object.keys(coresCategorias),
-    datasets: [
-      {
-        data: Object.keys(coresCategorias).map((categoria) =>
-          gastosFiltrados.filter((gasto) => gasto.categoria === categoria).reduce((total, gasto) => total + gasto.valor, 0)
-        ),
-        backgroundColor: Object.values(coresCategorias),
-        hoverOffset: 10,
-        borderColor: 'rgba(255, 255, 255, 0.5)',
-        borderWidth: 1,
-      },
-    ],
-  }), [gastosFiltrados]);
+    const dadosGraficoPizza = useMemo(() => ({
+        labels: Object.keys(coresCategorias),
+        datasets: [
+            {
+                data: Object.keys(coresCategorias).map((categoria) =>
+                    gastosFiltrados.filter((gasto) => gasto.categoria === categoria).reduce((total, gasto) => total + gasto.valor, 0)
+                ),
+                backgroundColor: Object.values(coresCategorias),
+                hoverOffset: 10,
+                borderColor: 'rgba(255, 255, 255, 0.5)',
+                borderWidth: 1,
+            },
+        ],
+    }), [gastosFiltrados]);
 
-  const dadosGraficoBarras = useMemo(() => ({
-    labels: gastosFiltrados.map((gasto) => gasto.data),
-    datasets: [
-      {
-        label: 'Gastos Diários',
-        data: gastosFiltrados.map((gasto) => gasto.valor),
-        backgroundColor: 'rgba(42, 157, 143, 0.7)',
-        borderColor: '#2A9D8F',
-        borderWidth: 1,
-        borderRadius: 4,
-        hoverBackgroundColor: '#2A9D8F',
-      },
-    ],
-  }), [gastosFiltrados]);
+    const dadosGraficoBarras = useMemo(() => ({
+        labels: gastosFiltrados.map((gasto) => gasto.data),
+        datasets: [
+            {
+                label: 'Gastos Diários',
+                data: gastosFiltrados.map((gasto) => gasto.valor),
+                backgroundColor: 'rgba(42, 157, 143, 0.7)',
+                borderColor: '#2A9D8F',
+                borderWidth: 1,
+                borderRadius: 4,
+                hoverBackgroundColor: '#2A9D8F',
+            },
+        ],
+    }), [gastosFiltrados]);
 
-  const optionsGraficoPizza = {
-    plugins: {
-      tooltip: {
-        backgroundColor: 'rgba(26, 32, 44, 0.9)',
-        borderRadius: 8,
-        callbacks: {
-          label: (context: any) => {
-            const label = context.label || '';
-            const value = context.parsed || 0;
-            const total = context.dataset.data.reduce((acc: number, val: number) => acc + val, 0);
-            const percentage = ((value / total) * 100).toFixed(2);
-            return `${label}: R$ ${value.toFixed(2)} (${percentage}%)`;
-          },
+    const optionsGraficoPizza = {
+        plugins: {
+            tooltip: {
+                backgroundColor: 'rgba(26, 32, 44, 0.9)',
+                borderRadius: 8,
+                callbacks: {
+                    label: (context: any) => {
+                        const label = context.label || '';
+                        const value = context.parsed || 0;
+                        const total = context.dataset.data.reduce((acc: number, val: number) => acc + val, 0);
+                        const percentage = ((value / total) * 100).toFixed(2);
+                        return `${label}: R$ ${value.toFixed(2)} (${percentage}%)`;
+                    },
+                },
+            },
+            legend: {
+                position: 'bottom' as const,
+                labels: {
+                    color: isDarkMode ? '#E2E8F0' : '#1F2A44',
+                    usePointStyle: true,
+                    padding: 15,
+                    font: { size: 12, weight: 'bold' },
+                },
+            },
         },
-      },
-      legend: {
-        position: 'bottom' as const,
-        labels: {
-          color: isDarkMode ? '#E2E8F0' : '#1F2A44',
-          usePointStyle: true,
-          padding: 15,
-          font: { size: 12, weight: 'bold' as const }, // Corrigido para valor compatível
+        animation: { animateRotate: true, animateScale: true },
+    };
+
+    const optionsGraficoBarras = {
+        plugins: {
+            tooltip: {
+                backgroundColor: 'rgba(26, 32, 44, 0.9)',
+                borderRadius: 8,
+                callbacks: {
+                    label: (context: any) => `${context.dataset.label || ''}: R$ ${context.parsed.y.toFixed(2)}`,
+                },
+            },
+            legend: { display: false },
         },
-      },
-    },
-    animation: { animateRotate: true, animateScale: true },
-  };
-
-  const optionsGraficoBarras = {
-    plugins: {
-      tooltip: {
-        backgroundColor: 'rgba(26, 32, 44, 0.9)',
-        borderRadius: 8,
-        callbacks: {
-          label: (context: any) => `${context.dataset.label || ''}: R$ ${context.parsed.y.toFixed(2)}`,
+        scales: {
+            y: {
+                beginAtZero: true,
+                ticks: { color: isDarkMode ? '#A0AEC0' : '#64748B', font: { size: 12 } },
+                grid: { color: isDarkMode ? 'rgba(160, 174, 192, 0.1)' : 'rgba(100, 116, 139, 0.1)' },
+            },
+            x: { ticks: { color: isDarkMode ? '#A0AEC0' : '#64748B', font: { size: 12 } } },
         },
-      },
-      legend: { display: false },
-    },
-    scales: {
-      y: {
-        beginAtZero: true,
-        ticks: { color: isDarkMode ? '#A0AEC0' : '#64748B', font: { size: 12 } },
-        grid: { color: isDarkMode ? 'rgba(160, 174, 192, 0.1)' : 'rgba(100, 116, 139, 0.1)' },
-      },
-      x: { ticks: { color: isDarkMode ? '#A0AEC0' : '#64748B', font: { size: 12 } } },
-    },
-  };
+    };
 
-  const totalGastoEsteMes = useMemo(() => gastosFiltrados.reduce((soma, gasto) => soma + gasto.valor, 0).toFixed(2), [gastosFiltrados]);
-  const categoriaMaisGastadora = useMemo(() => {
-    const gastosPorCategoria: { [key: string]: number } = {};
-    gastosFiltrados.forEach((gasto) => (gastosPorCategoria[gasto.categoria] = (gastosPorCategoria[gasto.categoria] || 0) + gasto.valor));
-    let maxCategoria = '';
-    let maxValor = 0;
-    for (const cat in gastosPorCategoria) {
-      if (gastosPorCategoria[cat] > maxValor) {
-        maxValor = gastosPorCategoria[cat];
-        maxCategoria = cat;
-      }
-    }
-    return maxCategoria;
-  }, [gastosFiltrados]);
-  const mediaGastoDiario = useMemo(() => (parseFloat(totalGastoEsteMes) / 30).toFixed(2), [totalGastoEsteMes]);
-  const economiaPotencial = useMemo(() => (metaEconomiaMensal - parseFloat(totalGastoEsteMes)).toFixed(2), [metaEconomiaMensal, totalGastoEsteMes]);
+    const totalGastoEsteMes = useMemo(() => gastosFiltrados.reduce((soma, gasto) => soma + gasto.valor, 0).toFixed(2), [gastosFiltrados]);
+    const categoriaMaisGastadora = useMemo(() => {
+        const gastosPorCategoria: { [key: string]: number } = {};
+        gastosFiltrados.forEach((gasto) => (gastosPorCategoria[gasto.categoria] = (gastosPorCategoria[gasto.categoria] || 0) + gasto.valor));
+        let maxCategoria = '';
+        let maxValor = 0;
+        for (const cat in gastosPorCategoria) {
+            if (gastosPorCategoria[cat] > maxValor) {
+                maxValor = gastosPorCategoria[cat];
+                maxCategoria = cat;
+            }
+        }
+        return maxCategoria;
+    }, [gastosFiltrados]);
+    const mediaGastoDiario = useMemo(() => (parseFloat(totalGastoEsteMes) / 30).toFixed(2), [totalGastoEsteMes]);
+    const economiaPotencial = useMemo(() => (metaEconomiaMensal - parseFloat(totalGastoEsteMes)).toFixed(2), [metaEconomiaMensal, totalGastoEsteMes]);
 
-  const toggleDarkMode = () => setIsDarkMode(!isDarkMode);
+    const toggleDarkMode = () => setIsDarkMode(!isDarkMode);
 
-  return (
-    <div className={`${styles.container} ${isDarkMode ? styles['dark-mode'] : ''}`}>
-      <header className={styles.header}>
-        <WalletIcon className={`${styles.icon} ${styles.hoverScale}`} />
-        <div className={styles.headerText}>
-          <h1>Finanças em Foco</h1>
-          <span className={styles.slogan}>Seu controle financeiro, simplificado.</span>
+    return (
+        <div className={`${styles.container} ${isDarkMode ? styles['dark-mode'] : ''}`}>
+            <header className={styles.header}>
+                <div className={styles.logo}>
+                    <FaWallet className={styles.icon} />
+                    <h1 className={styles.title}>Finanças em Foco</h1>
+                </div>
+                <div className={styles.headerRight}>
+                    <button onClick={toggleDarkMode} className={styles.darkModeToggle}>
+                        {isDarkMode ? <FaSun className={styles.darkModeIcon} /> : <FaMoon className={styles.darkModeIcon} />}
+                    </button>
+                </div>
+            </header>
+
+            <main className={styles.main}>
+                <section className={styles.dashboard}>
+                    <div className={styles.metricCard}>
+                        <h3 className={styles.metricTitle}>Total Gasto Este Mês</h3>
+                        <p className={styles.metricValue}>R$ {totalGastoEsteMes}</p>
+                    </div>
+                    <div className={styles.metricCard}>
+                        <h3 className={styles.metricTitle}>Categoria Mais Gastadora</h3>
+                        <p className={styles.metricValue}>{categoriaMaisGastadora}</p>
+                    </div>
+                    <div className={styles.metricCard}>
+                        <h3 className={styles.metricTitle}>Média de Gasto Diário</h3>
+                        <p className={styles.metricValue}>R$ {mediaGastoDiario}</p>
+                    </div>
+                    <div className={styles.metricCard}>
+                        <h3 className={styles.metricTitle}>Meta de Economia</h3>
+                        <p className={styles.metricValue}>
+                            R${' '}
+                            <motion.input
+                                type="number"
+                                className={styles.metaInput}
+                                value={metaEconomiaMensal}
+                                onChange={(e) => setMetaEconomiaMensal(Number(e.target.value))}
+                                whileFocus={{ scale: 1.05 }}
+                            />
+                        </p>
+                    </div>
+
+                    <div className={styles.metricCard}>
+                        <h3 className={styles.metricTitle}>Economia Potencial</h3>
+                         <p className={styles.metricValue}>R$ {economiaPotencial}</p>
+                    </div>
+
+
+                    <motion.button
+                        className={styles.addButton}
+                        onClick={() => setIsModalOpen(true)} // Abre o modal
+                        whileTap={{ scale: 0.95 }}
+                    >
+                        <FaPlusCircle className={styles.addIcon} /> Adicionar Gasto
+                    </motion.button>
+                </section>
+
+                {/* Modal para Adicionar Gasto */}
+                {isModalOpen && (
+                    <div className={styles.modalOverlay}>
+                        <motion.div className={styles.modal} initial={{ opacity: 0, y: -50 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -50 }}>
+                            <h2 className={styles.modalTitle}>Adicionar Novo Gasto</h2>
+                            <div className={styles.inputGroup}>
+                                <input
+                                    type="text"
+                                    placeholder="Descrição do gasto"
+                                    value={novoGasto}
+                                    name="descricaoGasto"
+                                    onChange={handleInputChange}
+                                    className={styles.inputField}
+                                />
+                                <input
+                                    type="text"
+                                    placeholder="Valor (ex: 65,00)"
+                                    value={valorGasto}
+                                    name="valorGasto"
+                                    onChange={handleInputChange}
+                                    className={styles.inputField}
+                                />
+                            </div>
+                            <div className={styles.inputGroup}>
+                                {categoriaPrevista && (
+                                    <div className={styles.categoriaPrevista}>Categoria: {categoriaPrevista}</div>
+                                )}
+                                <div className={styles.prioridadeInput}>
+                                    <label htmlFor="prioridadeGasto" className={styles.prioridadeLabel}>Prioridade:</label>
+                                    <select
+                                        id="prioridadeGasto"
+                                        value={prioridadeGasto}
+                                        onChange={(e) => setPrioridadeGasto(e.target.value as 'essencial' | 'naoEssencial')}
+                                        className={styles.selectInput}
+                                    >
+                                        <option value="essencial">Essencial</option>
+                                        <option value="naoEssencial">Não Essencial</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div className={styles.modalButtons}>
+                                <motion.button onClick={adicionarGasto} className={styles.modalAddButton} whileTap={{ scale: 0.95 }}>
+                                    {loading ? <div className={styles.spinner}></div> : 'Adicionar'}
+                                </motion.button>
+                                <button onClick={() => setIsModalOpen(false)} className={styles.modalCancelButton}>Cancelar</button>
+                            </div>
+                        </motion.div>
+                    </div>
+                )}
+
+                <section className={styles.recentExpenses}>
+                    <h2 className={styles.sectionTitle}>Gastos Recentes</h2>
+                    <div className={styles.tableContainer}>
+                        <table className={styles.table}>
+                            <thead>
+                                <tr>
+                                    <th>Descrição</th>
+                                    <th>Valor</th>
+                                    <th>Categoria</th>
+                                    <th>Data</th>
+                                    <th>Prioridade</th>
+                                    <th>Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {gastosFiltrados.map((gasto) => (
+                                    <tr key={gasto.id}>
+                                        <td>{gasto.descricao}</td>
+                                        <td>R$ {gasto.valor.toFixed(2)}</td>
+                                        <td style={{ color: coresCategorias[gasto.categoria] }}>{gasto.categoria}</td>
+                                        <td>{gasto.data}</td>
+                                        <td>
+                                            <span
+                                                className={
+                                                    gasto.prioridade === 'essencial'
+                                                        ? styles.prioridadeEssencial
+                                                        : styles.prioridadeNaoEssencial
+                                                }
+                                            >
+                                                {gasto.prioridade}
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <button onClick={() => removerGasto(gasto.id)} className={styles.deleteButton}>
+                                                <FaTrash className={styles.deleteIcon} />
+                                            </button>
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+
+                <section className={styles.filters}>
+                    <h2 className={styles.sectionTitle}>Filtros</h2>
+                    <div className={styles.filterContainer}>
+                        <div className={styles.filterGroup}>
+                            <label htmlFor="filtroCategoria" className={styles.filterLabel}>
+                                <FaFilter className={styles.filterIcon} /> Categoria:
+                            </label>
+                            <select
+                                id="filtroCategoria"
+                                value={filtroCategoria}
+                                onChange={(e) => setFiltroCategoria(e.target.value)}
+                                className={styles.selectInput}
+                            >
+                                <option value="todas">Todas</option>
+                                {Object.keys(categorias).map((categoria) => (
+                                    <option key={categoria} value={categoria}>{categoria}</option>
+                                ))}
+                            </select>
+                        </div>
+                        <div className={styles.filterGroup}>
+                            <label htmlFor="filtroPeriodo" className={styles.filterLabel}>
+                                 Período:
+                            </label>
+                            <select
+                                id="filtroPeriodo"
+                                value={filtroPeriodo}
+                                onChange={(e) => setFiltroPeriodo(e.target.value)}
+                                className={styles.selectInput}
+                            >
+                                <option value="todos">Todos</option>
+                                <option value="esteMes">Este Mês</option>
+                                <option value="mesPassado">Mês Passado</option>
+                            </select>
+                        </div>
+                    </div>
+                </section>
+
+                <section className={styles.charts}>
+                    <h2 className={styles.sectionTitle}>Análise Visual</h2>
+                    <div className={styles.chartContainer}>
+                        <div className={styles.pieChart}>
+                            <Pie data={dadosGraficoPizza} options={optionsGraficoPizza} />
+                        </div>
+                        <div className={styles.barChart}>
+                            <Bar data={dadosGraficoBarras} options={optionsGraficoBarras} />
+                        </div>
+                    </div>
+                </section>
+            </main>
+
+            <footer className={styles.footer}>
+                <p>© {new Date().getFullYear()} Finanças em Foco. Todos os direitos reservados.</p>
+            </footer>
         </div>
-        <nav>
-          <a href="#">Home</a>
-          <a href="#">Relatórios</a>
-          <a href="#">Configurações</a>
-          <button onClick={toggleDarkMode} className={styles.darkModeToggle} aria-label={isDarkMode ? 'Desativar modo noturno' : 'Ativar modo noturno'}>
-            {isDarkMode ? <SunIcon className={styles.darkModeIcon} /> : <MoonIcon className={styles.darkModeIcon} />}
-          </button>
-        </nav>
-      </header>
-
-      <main className={styles.main}>
-        <section className={styles.dashboardTop}>
-          <div className={styles.metricCard}>
-            <h3 className={styles.metricTitle}>Total Gasto Este Mês</h3>
-            <p className={styles.metricValue}>R$ {totalGastoEsteMes}</p>
-          </div>
-          <div className={styles.metricCard}>
-            <h3 className={styles.metricTitle}>Categoria Mais Gastadora</h3>
-            <p className={styles.metricValue}>{categoriaMaisGastadora}</p>
-          </div>
-          <div className={styles.metricCard}>
-            <h3 className={styles.metricTitle}>Média de Gasto Diário</h3>
-            <p className={styles.metricValue}>R$ {mediaGastoDiario}</p>
-          </div>
-          <div className={styles.metricCard}>
-            <h3 className={styles.metricTitle}>Média de Gastos Mensal</h3>
-            <p className={styles.metricValue}>R$ {mediaGastosMensal}</p>
-          </div>
-          <div className={styles.metricCard}>
-            <h3 className={styles.metricTitle}>Meta de Economia Mensal</h3>
-            <p className={styles.metricValue}>
-              R${' '}
-              <motion.input
-                type="number"
-                className={styles.metaInput}
-                value={metaEconomiaMensal}
-                onChange={(e) => setMetaEconomiaMensal(Number(e.target.value))}
-                whileFocus={{ scale: 1.05 }}
-              />
-            </p>
-          </div>
-          <div className={styles.metricCard}>
-            <h3 className={styles.metricTitle}>Economia Potencial</h3>
-            <p className={styles.metricValue}>R$ {economiaPotencial}</p>
-          </div>
-        </section>
-
-        <section className={styles.inputSection}>
-          <motion.input
-            type="text"
-            placeholder="Descrição do gasto"
-            value={novoGasto}
-            name="descricaoGasto"
-            onChange={handleInputChange}
-            whileFocus={{ scale: 1.03 }}
-            className={styles.inputField}
-          />
-          <motion.input
-            type="text"
-            placeholder="Valor (ex: 65,00)"
-            value={valorGasto}
-            name="valorGasto"
-            onChange={handleInputChange}
-            whileFocus={{ scale: 1.03 }}
-            className={styles.inputField}
-          />
-          {categoriaPrevista && <div className={styles.categoriaPrevista}>Categoria: {categoriaPrevista}</div>}
-          <div className={styles.prioridadeInput}>
-            <label htmlFor="prioridadeGasto" className={styles.prioridadeLabel}>Prioridade:</label>
-            <select
-              id="prioridadeGasto"
-              value={prioridadeGasto}
-              onChange={(e) => setPrioridadeGasto(e.target.value as 'essencial' | 'naoEssencial')}
-              className={styles.selectInput}
-            >
-              <option value="essencial">Essencial</option>
-              <option value="naoEssencial">Não Essencial</option>
-            </select>
-          </div>
-          <motion.button
-            onClick={adicionarGasto}
-            whileTap={{ scale: 0.95 }}
-            disabled={loading}
-            className={styles.addButton}
-          >
-            {loading ? <div className={styles.spinner}></div> : 'Adicionar Gasto'}
-          </motion.button>
-          {feedback && (
-            <motion.div
-              className={`${styles.feedback} ${feedback === 'success' ? styles.success : styles.error}`}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -20 }}
-              transition={{ duration: 0.4, ease: 'easeInOut' }}
-            >
-              {feedback === 'success' ? (
-                <>
-                  <CheckCircleIcon className={styles.successIcon} /> Gasto adicionado com sucesso!
-                </>
-              ) : (
-                <>
-                  <TimesCircleIcon className={styles.errorIcon} /> Valor inválido!
-                </>
-              )}
-            </motion.div>
-          )}
-        </section>
-
-        <section className={styles.gastosRecentes}>
-          <h2>Gastos Recentes</h2>
-          <div className={styles.tableContainer}>
-            <motion.table
-              className={styles.table}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0, transition: { delay: 0.2 } }}
-            >
-              <thead>
-                <tr>
-                  <th>Descrição</th>
-                  <th className={styles.valorHeader}>Valor</th>
-                  <th>Categoria</th>
-                  <th>Data</th>
-                  <th>Prioridade</th>
-                  <th></th>
-                </tr>
-              </thead>
-              <tbody>
-                {gastosFiltrados.map((gasto) => (
-                  <motion.tr
-                    key={gasto.id}
-                    initial={{ opacity: 0, scale: 0.95 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    exit={{ opacity: 0, scale: 0.9 }}
-                    transition={{ duration: 0.2 }}
-                    whileHover={{ scale: 1.02 }}
-                  >
-                    <td>{gasto.descricao}</td>
-                    <td className={styles.valorCell}>R$ {gasto.valor.toFixed(2)}</td>
-                    <td style={{ color: coresCategorias[gasto.categoria] }}>{gasto.categoria}</td>
-                    <td>{gasto.data}</td>
-                    <td>
-                      <span
-                        className={gasto.prioridade === 'essencial' ? styles.prioridadeEssencial : styles.prioridadeNaoEssencial}
-                      >
-                        {gasto.prioridade}
-                      </span>
-                    </td>
-                    <td>
-                      <motion.button
-                        onClick={() => removerGasto(gasto.id)}
-                        whileTap={{ scale: 0.9 }}
-                        className={styles.deleteButton}
-                      >
-                        <TrashIcon className={styles.deleteIcon} />
-                      </motion.button>
-                    </td>
-                  </motion.tr>
-                ))}
-              </tbody>
-            </motion.table>
-          </div>
-        </section>
-
-        <section className={styles.filtros}>
-          <h2>Filtros</h2>
-          <div className={styles.filterContainer}>
-            <label htmlFor="filtroCategoria">
-              <FilterIcon className={styles.icon} /> Categoria:
-            </label>
-            <select
-              id="filtroCategoria"
-              value={filtroCategoria}
-              onChange={(e) => setFiltroCategoria(e.target.value)}
-              className={styles.selectInput}
-            >
-              <option value="todas">Todas</option>
-              {Object.keys(categorias).map((categoria) => (
-                <option key={categoria} value={categoria}>{categoria}</option>
-              ))}
-            </select>
-            <label htmlFor="filtroPeriodo">
-              <FilterIcon className={styles.icon} /> Período:
-            </label>
-            <select
-              id="filtroPeriodo"
-              value={filtroPeriodo}
-              onChange={(e) => setFiltroPeriodo(e.target.value)}
-              className={styles.selectInput}
-            >
-              <option value="todos">Todos</option>
-              <option value="esteMes">Este Mês</option>
-              <option value="mesPassado">Mês Passado</option>
-            </select>
-          </div>
-        </section>
-
-        <section className={styles.graficos}>
-          <h2>Análise Visual</h2>
-          <div className={styles.chartContainer}>
-            <div className={styles.pieChart}>
-              <Pie data={dadosGraficoPizza} options={optionsGraficoPizza} />
-            </div>
-            <div className={styles.barChart}>
-              <Bar data={dadosGraficoBarras} options={optionsGraficoBarras} />
-            </div>
-          </div>
-        </section>
-
-        <section className={styles.relatorios}>
-          <motion.button className={styles.reportButton} whileTap={{ scale: 0.95 }}>
-            <FileAltIcon className={styles.icon} /> Gerar Relatório
-          </motion.button>
-        </section>
-      </main>
-
-      <footer className={styles.footer}>
-        <p>© 2024 Finanças em Foco.</p>
-        <p>
-          <a href="#">Termos de Uso</a> | <a href="#">Privacidade</a>
-        </p>
-      </footer>
-    </div>
-  );
+    );
 };
 
 export default Gastos;
@@ -599,438 +560,509 @@ export default Gastos;
 
 --- src\styles\Gastos.module.css ---
 
+/* src/styles/Gastos.module.css */
+
 :root {
   /* Paleta Principal */
-  --primary-color: #2A9D8F; /* Teal sofisticado */
-  --primary-color-light: #48C9B0; /* Teal claro */
-  --primary-color-dark: #1F766A; /* Teal escuro */
-  --accent-color: #E9C46A; /* Amarelo mostarda */
+  --primary-color: #2A9D8F;
+  --primary-color-light: #48C9B0;
+  --primary-color-dark: #1F766A;
+  --accent-color: #E9C46A;
 
   /* Cores Neutras */
-  --background-color: #ECF0F3; /* Cinza claro com vida */
-  --section-background: #F8FAFC; /* Fundo suave */
-  --card-background: #FFFFFF; /* Branco puro com sombra */
-  --text-color: #1F2A44; /* Azul acinzentado escuro */
-  --text-color-secondary: #64748B; /* Cinza-azulado médio */
+  --background-color: #F8FAFC;
+  --section-background: #FFFFFF;
+  --card-background: #FFFFFF;
+  --text-color: #334155;
+  --text-color-secondary: #64748B;
 
   /* Sombras */
-  --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.05);
-  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.08);
-  --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.1);
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.08);
+  --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.1);
+  --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.15);
 
-  /* Dark Mode */
-  --dark-background-color: #1A202C; /* Cinza escuro profundo */
-  --dark-section-background: #2D3748; /* Cinza médio escuro */
-  --dark-card-background: #4A5568; /* Cinza-azulado */
-  --dark-text-color: #E2E8F0; /* Branco acinzentado */
-  --dark-text-color-secondary: #A0AEC0; /* Cinza claro */
-  --dark-primary-color: #48C9B0; /* Teal claro */
+   /* Dark Mode */
+  --dark-background-color: #1A202C;
+  --dark-section-background: #2D3748;
+  --dark-card-background: #4A5568;
+  --dark-text-color: #E2E8F0;
+  --dark-text-color-secondary: #A0AEC0;
+  --dark-primary-color: #48BB78;
+  --dark-accent-color: #F6AD55;
 }
 
+
+/* Estilos Globais */
 .container {
-  font-family: 'Roboto', sans-serif;
+  font-family: 'Inter', sans-serif;
   font-size: 16px;
-  max-width: 1300px;
+  max-width: 1200px;
   margin: 0 auto;
   min-height: 100vh;
   display: flex;
   flex-direction: column;
-  background: linear-gradient(135deg, var(--background-color) 0%, #DCE8F0 100%);
+  background: var(--background-color);
   color: var(--text-color);
   transition: background 0.3s ease, color 0.3s ease;
 }
 
+/* Modo Escuro */
+.dark-mode {
+background: var(--dark-background-color);
+color: var(--dark-text-color);
+}
+
+.dark-mode .header,
+.dark-mode .dashboard,
+.dark-mode .addExpense,
+.dark-mode .recentExpenses,
+.dark-mode .filters,
+.dark-mode .charts,
+.dark-mode .footer,
+.dark-mode .modal { /* Adicionado .modal */
+  background: var(--dark-section-background);
+  border-color: var(--dark-text-color-secondary);
+}
+
+.dark-mode .metricCard,
+.dark-mode .pieChart,
+.dark-mode .barChart {
+background: var(--dark-card-background);
+}
+
+.dark-mode .header .title {
+background: linear-gradient(90deg, var(--dark-primary-color), #74C69D);
+-webkit-background-clip: text;
+-webkit-text-fill-color: transparent;
+}
+
+.dark-mode .sectionTitle,
+.dark-mode .filters label,
+.dark-mode .prioridadeLabel,
+.dark-mode .modalTitle { /* Adicionado .modalTitle */
+color: var(--dark-text-color-secondary);
+}
+
+.dark-mode .inputField,
+.dark-mode .selectInput {
+background: var(--dark-card-background);
+border-color: var(--dark-text-color-secondary);
+color: var(--dark-text-color);
+}
+
+.dark-mode .darkModeIcon {
+  color: #FFD700;
+}
+
+/* Cabeçalho */
 .header {
   display: flex;
-  align-items: center;
   justify-content: space-between;
-  padding: 20px 32px;
-  background: linear-gradient(90deg, var(--section-background), #E9ECEF);
-  border-bottom: 1px solid rgba(100, 116, 139, 0.1);
+  align-items: center;
+  padding: 1rem 2rem;
+  background: var(--section-background);
   box-shadow: var(--shadow-sm);
-  z-index: 10;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
 }
 
-.headerText {
-  display: flex;
-  flex-direction: column;
-}
-
-.header h1 {
-  font-size: 2rem;
-  font-weight: 600;
-  background: linear-gradient(90deg, var(--primary-color), var(--primary-color-light));
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-}
-
-.slogan {
-  font-size: 0.95rem;
-  font-weight: 300;
-  color: var(--text-color-secondary);
-}
-
-.header nav {
+.logo {
   display: flex;
   align-items: center;
-}
-
-.header nav a {
-  margin-left: 20px;
-  text-decoration: none;
-  color: var(--text-color-secondary);
-  padding: 8px 12px;
-  border-radius: 4px;
-  font-weight: 500;
-  transition: color 0.2s ease, background 0.2s ease;
-}
-
-.header nav a:hover {
-  color: var(--primary-color);
-  background: rgba(42, 157, 143, 0.1);
 }
 
 .icon {
-  width: 20px;
-  height: 20px;
-  margin-right: 6px;
-  color: var(--text-color-secondary);
+  margin-right: 0.75rem;
+  font-size: 1.5rem;
+  color: var(--primary-color);
 }
 
-.icon:hover {
-  transform: scale(1.1);
+.title {
+  font-size: 1.75rem;
+  font-weight: 700;
+   background: linear-gradient(90deg, var(--primary-color), var(--primary-color-light));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  margin-bottom: 0;
 }
 
-.successIcon {
-  color: #FFFFFF;
-}
-
-.errorIcon {
-  color: #FFFFFF;
-}
-
-.main {
-  flex: 1;
-  padding: 24px 30px;
+.headerRight {
   display: flex;
-  flex-direction: column;
-  gap: 24px;
+  align-items: center;
 }
 
-.dashboardTop {
+.darkModeToggle {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 1.25rem;
+  color: var(--text-color-secondary);
+  transition: transform 0.3s ease;
+}
+
+.darkModeToggle:hover {
+  transform: rotate(15deg);
+}
+
+
+/* Conteúdo Principal */
+.main {
+flex: 1;
+padding: 2rem;
+display: flex;
+flex-direction: column;
+gap: 2rem;
+}
+
+/* Dashboard */
+.dashboard {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-  gap: 16px;
-  padding: 16px;
-  background: linear-gradient(135deg, #F8FAFC 0%, #EBF4FF 100%);
-  border-radius: 12px;
-  box-shadow: var(--shadow-sm);
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 1rem;
+  padding: 1.5rem;
+   background: var(--section-background);
+  border-radius: 0.5rem;
+  box-shadow: var(--shadow-md);
 }
 
 .metricCard {
-  padding: 16px;
-  border-radius: 12px;
+  padding: 1rem;
   background: var(--card-background);
-  box-shadow: var(--shadow-md);
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  border-radius: 0.5rem;
+  box-shadow: var(--shadow-sm);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  display: flex;
+  flex-direction: column;
 }
 
 .metricCard:hover {
-  transform: translateY(-5px);
-  box-shadow: var(--shadow-lg);
+  transform: translateY(-3px);
+  box-shadow: var(--shadow-md);
 }
 
 .metricTitle {
-  font-size: 0.85rem;
+  font-size: 0.875rem;
   font-weight: 500;
   color: var(--text-color-secondary);
-  letter-spacing: 1px;
-  text-transform: uppercase;
+  margin-bottom: 0.25rem;
 }
 
 .metricValue {
-  font-size: 1.5rem;
+  font-size: 1.25rem;
   font-weight: 600;
   color: var(--primary-color);
 }
 
-.inputSection {
-  display: grid;
-  grid-template-columns: 2fr 1fr 1fr auto;
-  gap: 12px;
+/* Botão de Adicionar (Dashboard) */
+.addButton {
+  padding: 0.75rem 1.5rem;
+  background: var(--primary-color);
+  color: #FFFFFF;
+  border: none;
+  border-radius: 0.375rem;
+  font-size: 1rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+  display: flex; /* Para alinhar o ícone */
   align-items: center;
-  padding: 24px;
-  background: linear-gradient(90deg, #F8FAFC, #E9ECEF);
-  border-radius: 12px;
-  box-shadow: var(--shadow-sm);
+  justify-content: center; /* Centraliza o texto e o ícone */
+  white-space: nowrap; /* Evita quebra de linha */
+}
+
+
+.addButton:hover {
+  background-color: var(--primary-color-light);
+}
+
+.addIcon {
+  margin-right: 0.5rem; /* Espaço entre o ícone e o texto */
+  font-size: 1.2rem;
+}
+
+/* Modal */
+.modalOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5); /* Fundo semi-transparente */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000; /* Garante que fique acima de tudo */
+}
+
+.modal {
+  background: var(--section-background);
+  padding: 2rem;
+  border-radius: 0.5rem;
+  box-shadow: var(--shadow-lg);
+  width: 90%; /* Largura responsiva */
+  max-width: 500px; /* Largura máxima */
+  position: relative; /* Para o botão de fechar */
+}
+
+.modalTitle {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: var(--primary-color);
+  margin-bottom: 1rem;
+}
+
+.modalButtons {
+  display: flex;
+  justify-content: space-between; /* Espaçamento entre os botões */
+  gap: 1rem;
+   margin-top: 1rem;
+
+}
+.inputGroup {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); /* Responsivo */
+  gap: 1rem;
+  margin-bottom: 1rem; /* Espaçamento */
+}
+.prioridadeInput{
+   display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); /* Responsivo */
+  gap: 1rem;
+  margin-bottom: 1rem;
 }
 
 .inputField {
   width: 100%;
-  padding: 12px 16px;
-  border: 1px solid rgba(100, 116, 139, 0.2);
-  border-radius: 8px;
-  font-size: 0.95rem;
-  background: #FFFFFF;
+  padding: 0.75rem 1rem;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  border-radius: 0.375rem;
+  font-size: 1rem;
   color: var(--text-color);
+   background-color: var(--background-color); /* Adicionado para modo claro */
   transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
 .inputField:focus {
   outline: none;
   border-color: var(--primary-color);
-  box-shadow: 0 0 4px rgba(42, 157, 143, 0.3);
+  box-shadow: 0 0 0 2px rgba(42, 157, 143, 0.2);
 }
 
-.categoriaPrevista {
-  font-size: 0.9rem;
-  color: var(--text-color-secondary);
-}
-
-.prioridadeInput {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.prioridadeLabel {
-  font-size: 0.9rem;
-  color: var(--text-color-secondary);
-  font-weight: 500;
-}
-
-.selectInput {
-  padding: 12px 16px;
-  border: 1px solid rgba(100, 116, 139, 0.2);
-  border-radius: 8px;
-  font-size: 0.95rem;
-  background: #FFFFFF;
-  color: var(--text-color);
-  cursor: pointer;
-  transition: border-color 0.2s ease, box-shadow 0.2s ease;
-}
-
-.selectInput:focus {
-  outline: none;
-  border-color: var(--primary-color);
-  box-shadow: 0 0 4px rgba(42, 157, 143, 0.3);
-}
-
-.addButton {
-  padding: 12px 24px;
-  background: linear-gradient(90deg, var(--primary-color), var(--primary-color-light));
+.modalAddButton {
+   padding: 0.75rem 1.5rem;
+  background: var(--primary-color);
   color: #FFFFFF;
   border: none;
-  border-radius: 8px;
+  border-radius: 0.375rem;
   font-size: 1rem;
   font-weight: 500;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  box-shadow: var(--shadow-sm);
-  transition: background 0.3s ease, transform 0.2s ease;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+  flex: 1; /* Ocupa o espaço disponível */
+}
+.modalAddButton:hover{
+   background-color: var(--primary-color-light);
 }
 
-.addButton:hover {
-  background: linear-gradient(90deg, var(--primary-color-light), var(--primary-color));
-  transform: translateY(-2px);
-}
-
-.feedback {
-  padding: 12px 20px;
-  border-radius: 8px;
-  display: flex;
-  align-items: center;
-  gap: 8px;
+.modalCancelButton {
+padding: 0.75rem 1.5rem;
+  background: var(--accent-color);
+  color: #FFFFFF;
+  border: none;
+  border-radius: 0.375rem;
+  font-size: 1rem;
   font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+  flex: 1;
 }
-
-.success {
-  background: linear-gradient(90deg, #74C69D, #48C9B0);
-  color: #FFFFFF;
+.modalCancelButton:hover{
+  background: var(--primary-color-light);
 }
-
-.error {
-  background: linear-gradient(90deg, #E63946, #F4A261);
-  color: #FFFFFF;
-}
-
-.gastosRecentes {
-  padding: 24px;
-  background: linear-gradient(90deg, #F8FAFC, #E9ECEF);
-  border-radius: 12px;
-  box-shadow: var(--shadow-sm);
-}
-
-.gastosRecentes h2,
-.filtros h2,
-.graficos h2 {
-  font-size: 1.5rem;
-  font-weight: 600;
-  color: var(--primary-color);
+/* Gastos Recentes */
+.recentExpenses {
+  padding: 1.5rem;
+  background: var(--section-background);
+  border-radius: 0.5rem;
+  box-shadow: var(--shadow-md);
 }
 
 .tableContainer {
   overflow-x: auto;
-  border-radius: 8px;
-  border: 1px solid rgba(100, 116, 139, 0.1);
 }
 
 .table {
   width: 100%;
   border-collapse: collapse;
+  margin-top: 1rem;
 }
 
 .table th,
 .table td {
-  padding: 12px 15px;
+  padding: 0.75rem 1rem;
   text-align: left;
-  border-bottom: 1px solid rgba(100, 116, 139, 0.1);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
 }
 
 .table th {
-  background: var(--primary-color);
   font-weight: 600;
-  color: #FFFFFF;
-  font-size: 0.75rem;
-  letter-spacing: 0.5px;
-  text-transform: uppercase;
+  color: var(--text-color-secondary);
 }
 
-.table td {
-  font-size: 0.9rem;
-  font-weight: 400;
+.table tbody tr:nth-child(even) {
+  background-color: rgba(0, 0, 0, 0.02); /* Fundo levemente diferente */
 }
-
-.prioridadeEssencial {
-  background: #74C69D;
-  color: #FFFFFF;
-  padding: 4px 8px;
-  border-radius: 12px;
-  font-size: 0.75rem;
-}
-
-.prioridadeNaoEssencial {
-  background: #E9C46A;
-  color: #1F2A44;
-  padding: 4px 8px;
-  border-radius: 12px;
-  font-size: 0.75rem;
+.table tbody tr:hover {
+  background-color: rgba(42, 157, 143, 0.05); /* Hover suave */
 }
 
 .deleteButton {
-  background: transparent;
-  padding: 6px;
-  border-radius: 50%;
-  transition: background 0.2s ease;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--accent-color);
+  font-size: 1rem;
+   transition: color 0.2s ease; /* Adiciona transição */
 }
 
 .deleteButton:hover {
-  background: rgba(231, 111, 81, 0.2);
+ color: var(--primary-color-dark);
 }
 
-.deleteIcon {
-  width: 18px;
-  height: 18px;
-  color: #E76F51;
-}
-
-.filtros {
-  padding: 24px;
-  background: linear-gradient(90deg, #F8FAFC, #E9ECEF);
-  border-radius: 12px;
-  box-shadow: var(--shadow-sm);
+/* Filtros */
+.filters {
+  padding: 1.5rem;
+  background: var(--section-background);
+  border-radius: 0.5rem;
+  box-shadow: var(--shadow-md);
 }
 
 .filterContainer {
   display: flex;
-  flex-wrap: wrap;
-  gap: 16px;
-  align-items: center;
-  margin-top: 12px;
+  flex-wrap: wrap; /* Quebra para várias linhas se necessário */
+  gap: 1rem;
+  align-items: center; /* Alinha verticalmente */
 }
 
-.graficos {
-  padding: 24px;
-  background: linear-gradient(90deg, #F8FAFC, #E9ECEF);
-  border-radius: 12px;
-  box-shadow: var(--shadow-sm);
+.filterGroup {
+   display: flex;
+  flex-wrap: wrap; /* Quebra para várias linhas se necessário */
+  gap: 1rem;
+  align-items: center;
+}
+
+.filterLabel {
+  font-weight: 500;
+  color: var(--text-color-secondary);
+   display: flex; /* Para alinhar o ícone com o texto */
+  align-items: center;
+   margin-right: 0.5rem;
+}
+.filterIcon {
+  margin-right: 0.3rem; /* Espaço entre ícone e texto */
+  font-size: 1rem; /* Tamanho do ícone */
+}
+
+.selectInput {
+    padding: 0.75rem 1rem;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  border-radius: 0.375rem;
+  font-size: 1rem;
+  color: var(--text-color);
+  background-color: var(--background-color);
+  appearance: none; /* Remove a seta padrão do select */
+  -webkit-appearance: none;
+  -moz-appearance: none;
+   cursor: pointer;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.selectInput:focus {
+outline: none;
+border-color: var(--primary-color);
+box-shadow: 0 0 0 2px rgba(42, 157, 143, 0.2);
+}
+
+/* Gráficos */
+.charts {
+  padding: 1.5rem;
+  background: var(--section-background);
+  border-radius: 0.5rem;
+  box-shadow: var(--shadow-md);
 }
 
 .chartContainer {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-  gap: 20px;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); /* Responsivo */
+  gap: 1.5rem;
+  margin-top: 1rem;
 }
 
 .pieChart,
 .barChart {
-  padding: 20px;
-  background: #FFFFFF;
-  border-radius: 8px;
+  background: var(--card-background);
+  border-radius: 0.5rem;
   box-shadow: var(--shadow-sm);
+   padding: 1rem; /* Adiciona padding interno */
 }
 
-.relatorios {
-  padding: 24px;
-  background: linear-gradient(90deg, #F8FAFC, #E9ECEF);
-  border-radius: 12px;
-  box-shadow: var(--shadow-sm);
-}
-
-.reportButton {
-  padding: 12px 24px;
-  background: linear-gradient(90deg, var(--primary-color), var(--primary-color-light));
-  color: #FFFFFF;
-  border: none;
-  border-radius: 8px;
-  font-size: 1rem;
-  font-weight: 500;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  box-shadow: var(--shadow-sm);
-  transition: background 0.3s ease, transform 0.2s ease;
-}
-
-.reportButton:hover {
-  background: linear-gradient(90deg, var(--primary-color-light), var(--primary-color));
-  transform: translateY(-2px);
-}
-
+/* Footer */
 .footer {
   text-align: center;
-  padding: 20px;
-  border-top: 1px solid rgba(100, 116, 139, 0.1);
-  background: linear-gradient(90deg, #F8FAFC, #E9ECEF);
+  padding: 1rem;
   color: var(--text-color-secondary);
-  font-size: 0.85rem;
+  background: var(--section-background); /* Fundo consistente */
+  border-top: 1px solid rgba(0,0,0,0.05);
+}
+.categoriaPrevista {
+  grid-column: span 2; /* Ocupa duas colunas no grid */
+  text-align: center; /* Centraliza o texto */
+  font-size: 0.9rem;
+  color: var(--text-color-secondary);
+  margin-top: 0.5rem; /* Espaço acima */
+}
+.prioridadeLabel {
+  font-size: 0.9rem;
+  color: var(--text-color-secondary);
+  font-weight: 500;
+    margin-right: 0.5rem;
 }
 
-.footer a {
-  color: var(--primary-color);
-  text-decoration: none;
+.prioridadeEssencial,
+.prioridadeNaoEssencial {
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  text-transform: capitalize;
+  display: inline-block;
 }
 
-.footer a:hover {
-  text-decoration: underline;
+.prioridadeEssencial {
+  background-color: rgba(116, 198, 157, 0.2);
+  color: var(--primary-color-dark);
+  border: 1px solid #74C69D;
 }
 
-.darkModeToggle {
-  padding: 8px;
+.prioridadeNaoEssencial {
+  background-color: rgba(233, 196, 106, 0.2);
+  color: var(--accent-color);
+  border: 1px solid #E9C46A;
+}
+
+/* Spinner de Carregamento */
+.spinner {
+  border: 4px solid rgba(255, 255, 255, 0.3);
+  border-top: 4px solid #fff;
   border-radius: 50%;
-  background: var(--section-background);
-  box-shadow: var(--shadow-sm);
-  transition: background 0.2s ease, transform 0.3s ease;
+  width: 20px;
+  height: 20px;
+  animation: spin 1s linear infinite;
+  margin: 0 auto; /* Centraliza */
 }
 
-.darkModeToggle:hover {
-  background: var(--primary-color-light);
-  transform: rotate(15deg);
-}
-
-.darkModeIcon {
-  width: 22px;
-  height: 22px;
-  color: var(--text-color-secondary);
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
 }
 
 .metaInput {
@@ -1043,7 +1075,7 @@ export default Gastos;
   min-width: 50px;
   text-align: left;
   padding: 0;
-  margin: 0;
+   margin: 0 0 0 0.25rem;
   border-bottom: 1px dashed var(--primary-color);
   -moz-appearance: textfield;
   -webkit-appearance: none;
@@ -1051,115 +1083,56 @@ export default Gastos;
 
 .metaInput::-webkit-outer-spin-button,
 .metaInput::-webkit-inner-spin-button {
-  -webkit-appearance: none;
-  margin: 0;
+-webkit-appearance: none;
+margin: 0;
 }
 
 .metaInput:focus {
-  outline: none;
-  border-bottom-style: solid;
+outline: none;
+border-bottom-style: solid;
 }
 
-.dark-mode .container {
-  background: linear-gradient(135deg, var(--dark-background-color) 0%, #2D3748 100%);
-  color: var(--dark-text-color);
-}
-
-.dark-mode .header,
-.dark-mode .dashboardTop,
-.dark-mode .inputSection,
-.dark-mode .gastosRecentes,
-.dark-mode .filtros,
-.dark-mode .graficos,
-.dark-mode .relatorios,
-.dark-mode .footer {
-  background: linear-gradient(90deg, var(--dark-section-background), #4A5568);
-  border-color: rgba(160, 174, 192, 0.1);
-}
-
-.dark-mode .metricCard,
-.dark-mode .pieChart,
-.dark-mode .barChart {
-  background: var(--dark-card-background);
-}
-
-.dark-mode .header h1 {
-  background: linear-gradient(90deg, var(--dark-primary-color), #74C69D);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-}
-
-.dark-mode .gastosRecentes h2,
-.dark-mode .filtros h2,
-.dark-mode .graficos h2 {
-  color: var(--dark-primary-color);
-}
-
-.dark-mode .slogan,
-.dark-mode .header nav a,
-.dark-mode .icon,
-.dark-mode .metricTitle,
-.dark-mode .categoriaPrevista,
-.dark-mode .filtros label,
-.dark-mode .prioridadeLabel {
-  color: var(--dark-text-color-secondary);
-}
-
-.dark-mode .inputField,
-.dark-mode .selectInput {
-  background: #4A5568;
-  border-color: rgba(160, 174, 192, 0.2);
-  color: var(--dark-text-color);
-}
-
-.dark-mode .darkModeIcon {
-  color: #FFD700;
-}
-
+/* Media Queries */
 @media (max-width: 768px) {
   .header {
-    padding: 15px;
-    flex-direction: column;
+      flex-direction: column; /* Empilha elementos */
+      align-items: stretch; /* Estica para ocupar a largura */
   }
-  .headerText {
-    align-items: center;
-    text-align: center;
-  }
-  .header nav {
-    margin-top: 10px;
-    flex-direction: column;
-  }
-  .header nav a {
-    margin: 5px 0;
-  }
-  .main {
-    padding: 15px;
-    gap: 16px;
-  }
-  .dashboardTop {
-    grid-template-columns: 1fr;
-  }
-  .inputSection {
-    grid-template-columns: 1fr;
-  }
-  .chartContainer {
-    grid-template-columns: 1fr;
-  }
-}
-.hoverScale:hover {
-  transform: scale(1.1);
-  transition: transform 0.3s ease;
-}
-.icon {
-  width: 20px;
-  height: 20px;
-  margin-right: 6px;
-  color: var(--text-color-secondary);
-}
 
-.hoverScale:hover {
-  transform: scale(1.1);
-  transition: transform 0.3s ease;
+  .logo, .nav {
+      margin-bottom: 0.5rem; /* Espaçamento */
+      justify-content: center; /* Centraliza */
+  }
+  .nav a {
+      margin-right: 0.75rem; /* Reduz espaçamento */
+      margin-left: 0.75rem;
+  }
+
+  .main {
+      padding: 1rem; /* Reduz padding */
+  }
+
+  .dashboard {
+      grid-template-columns: 1fr; /* Uma coluna */
+      padding: 1rem; /* Reduz padding */
+  }
+   .inputGroup, .prioridadeInput {
+      grid-template-columns: 1fr; /* Inputs em uma coluna */
+  }
+   .filterContainer{
+      flex-direction: column;
+      align-items: stretch;
+   }
+   .filterGroup{
+      flex-direction: column;
+      align-items: stretch;
+   }
+   .modal {
+      width: 95%; /* Aumenta a largura em telas menores */
+  }
+   .modalButtons {
+      flex-direction: column; /* Empilha os botões em telas menores */
+  }
 }
 
 --- src\App.test.tsx ---
@@ -1177,13 +1150,15 @@ test('renders learn react link', () => {
 
 --- src\App.tsx ---
 
+// src/App.tsx
 import React from 'react';
 import Gastos from './components/Gastos';
-import './styles/App.css';
+import './styles/App.css'; // Certifique-se de que este import está correto.  MUITA ATENÇÃO AQUI.
+import './index.css'; // Importante:  Importe o index.css aqui também.
 
 const App: React.FC = () => {
   return (
-    <div className="app">
+    <div className="app" style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
       <Gastos />
     </div>
   );
@@ -1192,6 +1167,8 @@ const App: React.FC = () => {
 export default App;
 
 --- src\index.css ---
+
+/* src/index.css */
 
 /* Reset básico */
 * {
@@ -1205,6 +1182,10 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   background-color: #f0f2f5; /* Mesmo do App.css para consistência */
+    /* Solução combinada */
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
 }
 
 /* Tipografia (opcional - ajuste se quiser) */

@@ -1,3 +1,4 @@
+// src/components/Gastos.tsx
 import React, { useState, useEffect, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import {
@@ -9,6 +10,7 @@ import {
   LinearScale,
   BarElement,
   Title,
+  ChartOptions,
 } from 'chart.js';
 import { Pie, Bar } from 'react-chartjs-2';
 import styles from '../styles/Gastos.module.css';
@@ -17,15 +19,13 @@ import {
   FaChartPie,
   FaFilter,
   FaFileAlt,
-  FaCheckCircle,
-  FaTimesCircle,
+  FaTrash,
+  FaPlusCircle,
   FaMoon,
   FaSun,
-  FaTrash,
-  FaShoppingCart, // Adicionado
-  FaUtensils,     // Adicionado
-  FaBus,          // Adicionado
-  FaHome,          //Adicionado
+  FaMoneyBillWave,
+  FaPiggyBank,
+  FaCalendarAlt,
 } from 'react-icons/fa';
 
 ChartJS.register(ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement, Title);
@@ -61,22 +61,6 @@ function categorizarGasto(descricao: string): string {
   return 'outros';
 }
 
-// Simplificando os ícones, usando diretamente os componentes do react-icons
-const WalletIcon = FaWallet;
-const ChartPieIcon = FaChartPie;
-const FilterIcon = FaFilter;
-const FileAltIcon = FaFileAlt;
-const CheckCircleIcon = FaCheckCircle;
-const TimesCircleIcon = FaTimesCircle;
-const MoonIcon = FaMoon;
-const SunIcon = FaSun;
-const TrashIcon = FaTrash;
-const ShoppingCartIcon = FaShoppingCart;
-const UtensilsIcon = FaUtensils;
-const BusIcon = FaBus;
-const HomeIcon = FaHome;
-
-
 const Gastos: React.FC = () => {
   const [gastos, setGastos] = useState<Gasto[]>([]);
   const [novoGasto, setNovoGasto] = useState('');
@@ -84,7 +68,6 @@ const Gastos: React.FC = () => {
   const [categoriaPrevista, setCategoriaPrevista] = useState('');
   const [filtroCategoria, setFiltroCategoria] = useState('todas');
   const [filtroPeriodo, setFiltroPeriodo] = useState('todos');
-  const [feedback, setFeedback] = useState<'success' | 'error' | null>(null);
   const [loading, setLoading] = useState(false);
   const [isDarkMode, setIsDarkMode] = useState(
     () => typeof localStorage !== 'undefined' && localStorage.getItem('darkMode') === 'true'
@@ -92,35 +75,15 @@ const Gastos: React.FC = () => {
   const [metaEconomiaMensal, setMetaEconomiaMensal] = useState<number>(1000);
   const [prioridadeGasto, setPrioridadeGasto] = useState<'essencial' | 'naoEssencial'>('naoEssencial');
   const [mediaGastosMensal, setMediaGastosMensal] = useState<number>(0);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false); // Estado para controlar a sidebar
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   useEffect(() => {
     const initialExpenses: Gasto[] = [
-      { id: 1, descricao: 'Supermercado Extra', valor: 325.80, categoria: 'alimentacao', data: '2024-01-05', prioridade: 'essencial' },
-      { id: 2, descricao: 'Uber - Viagem ao centro', valor: 32.50, categoria: 'transporte', data: '2024-01-06', prioridade: 'naoEssencial' },
-      { id: 3, descricao: 'Cinema com amigos', valor: 75.00, categoria: 'lazer', data: '2024-01-07', prioridade: 'naoEssencial' },
-      { id: 4, descricao: 'Farmácia - Remédios', valor: 120.30, categoria: 'saude', data: '2024-01-10', prioridade: 'essencial' },
-      { id: 5, descricao: 'Compra online - Livro', valor: 45.90, categoria: 'compras', data: '2024-01-12', prioridade: 'naoEssencial' },
-      { id: 6, descricao: 'Restaurante Italiano', valor: 180.00, categoria: 'alimentacao', data: '2024-01-15', prioridade: 'naoEssencial' },
-      { id: 7, descricao: 'Gasolina - Posto Shell', valor: 200.00, categoria: 'transporte', data: '2024-01-18', prioridade: 'essencial' },
-      { id: 8, descricao: 'Netflix - Assinatura', valor: 39.90, categoria: 'servicos', data: '2024-01-20', prioridade: 'naoEssencial' },
-      { id: 9, descricao: 'Academia - Mensalidade', valor: 110.00, categoria: 'servicos', data: '2024-01-22', prioridade: 'naoEssencial' },
-      { id: 10, descricao: 'Aluguel do apartamento', valor: 1200.00, categoria: 'moradia', data: '2024-01-25', prioridade: 'essencial' },
-      { id: 11, descricao: 'Conta de luz', valor: 185.50, categoria: 'moradia', data: '2024-01-28', prioridade: 'essencial' },
-      { id: 12, descricao: 'Curso online de Inglês', valor: 250.00, categoria: 'educacao', data: '2024-01-30', prioridade: 'naoEssencial' },
-      { id: 13, descricao: 'Café da manhã na padaria', valor: 15.00, categoria: 'alimentacao', data: '2024-02-02', prioridade: 'naoEssencial' },
-      { id: 14, descricao: 'Uber - Volta para casa', valor: 28.00, categoria: 'transporte', data: '2024-02-03', prioridade: 'naoEssencial' },
-      { id: 15, descricao: 'Presente de aniversário', valor: 80.00, categoria: 'compras', data: '2024-02-05', prioridade: 'naoEssencial' },
-      { id: 16, descricao: 'Consulta médica', valor: 150.00, categoria: 'saude', data: '2024-02-08', prioridade: 'essencial' },
-      { id: 17, descricao: 'Ingressos para show', valor: 200.00, categoria: 'lazer', data: '2024-02-10', prioridade: 'naoEssencial' },
-      { id: 18, descricao: 'Mercado do mês', valor: 450.00, categoria: 'alimentacao', data: '2024-02-12', prioridade: 'essencial' },
-      { id: 19, descricao: 'Oficina mecânica', valor: 300.00, categoria: 'transporte', data: '2024-02-15', prioridade: 'essencial' },
-      { id: 20, descricao: 'Spotify - Assinatura', valor: 19.90, categoria: 'servicos', data: '2024-02-18', prioridade: 'naoEssencial' },
-      { id: 21, descricao: 'Condomínio', valor: 400.00, categoria: 'moradia', data: '2024-02-20', prioridade: 'essencial' },
-      { id: 22, descricao: 'Material escolar', valor: 120.00, categoria: 'educacao', data: '2024-02-22', prioridade: 'naoEssencial' },
-      { id: 23, descricao: 'Jantar especial', valor: 100.00, categoria: 'alimentacao', data: '2024-02-25', prioridade: 'naoEssencial' },
-      { id: 24, descricao: 'Supermercado', valor: 280.00, categoria: 'alimentacao', data: '2024-03-03', prioridade: 'essencial' },
-      { id: 25, descricao: 'Uber - Ida ao trabalho', valor: 22.00, categoria: 'transporte', data: '2024-03-05', prioridade: 'naoEssencial' },
-      { id: 26, descricao: 'Remédio para dor de cabeça', valor: 35.00, categoria: 'saude', data: '2024-03-07', prioridade: 'essencial' },
+      { id: 1, descricao: 'Supermercado Extra', valor: 325.80, categoria: 'alimentacao', data: '2024-01-04', prioridade: 'essencial' },
+      { id: 2, descricao: 'Uber - Viagem ao centro', valor: 32.50, categoria: 'transporte', data: '2024-01-05', prioridade: 'naoEssencial' },
+      { id: 3, descricao: 'Cinema com amigos', valor: 75.00, categoria: 'lazer', data: '2024-01-06', prioridade: 'naoEssencial' },
+      { id: 4, descricao: 'Farmácia - Remédios', valor: 120.30, categoria: 'saude', data: '2024-01-09', prioridade: 'essencial' },
     ];
     setGastos(initialExpenses);
   }, []);
@@ -143,7 +106,6 @@ const Gastos: React.FC = () => {
     const { name, value } = e.target;
     if (name === 'descricaoGasto') setNovoGasto(value);
     if (name === 'valorGasto') setValorGasto(value);
-    setFeedback(null);
   };
 
   const adicionarGasto = () => {
@@ -153,7 +115,6 @@ const Gastos: React.FC = () => {
     setTimeout(() => {
       const valor = parseFloat(valorGasto.replace(',', '.'));
       if (isNaN(valor)) {
-        setFeedback('error');
         setLoading(false);
         return;
       }
@@ -170,9 +131,8 @@ const Gastos: React.FC = () => {
       setGastos([...gastos, novo]);
       setNovoGasto('');
       setValorGasto('');
-      setFeedback('success');
       setLoading(false);
-      setTimeout(() => setFeedback(null), 3000);
+      setIsModalOpen(false);
     }, 750);
   };
 
@@ -259,7 +219,7 @@ const Gastos: React.FC = () => {
     ],
   }), [gastosFiltrados]);
 
-  const optionsGraficoPizza = {
+  const optionsGraficoPizza: ChartOptions<'pie'> = {
     plugins: {
       tooltip: {
         backgroundColor: 'rgba(26, 32, 44, 0.9)',
@@ -280,14 +240,17 @@ const Gastos: React.FC = () => {
           color: isDarkMode ? '#E2E8F0' : '#1F2A44',
           usePointStyle: true,
           padding: 15,
-          font: { size: 12, weight: 'bold' as const }, // Corrigido para valor compatível
+          font: {
+            size: 12,
+            weight: 'bold' as const,
+          },
         },
       },
     },
     animation: { animateRotate: true, animateScale: true },
   };
 
-  const optionsGraficoBarras = {
+  const optionsGraficoBarras: ChartOptions<'bar'> = {
     plugins: {
       tooltip: {
         backgroundColor: 'rgba(26, 32, 44, 0.9)',
@@ -320,53 +283,112 @@ const Gastos: React.FC = () => {
         maxCategoria = cat;
       }
     }
-    return maxCategoria;
+    return maxCategoria || 'Nenhuma';
   }, [gastosFiltrados]);
   const mediaGastoDiario = useMemo(() => (parseFloat(totalGastoEsteMes) / 30).toFixed(2), [totalGastoEsteMes]);
   const economiaPotencial = useMemo(() => (metaEconomiaMensal - parseFloat(totalGastoEsteMes)).toFixed(2), [metaEconomiaMensal, totalGastoEsteMes]);
 
   const toggleDarkMode = () => setIsDarkMode(!isDarkMode);
+  const toggleSidebar = () => setIsSidebarOpen((prev) => !prev); // Simplificado para garantir toggle correto
 
   return (
     <div className={`${styles.container} ${isDarkMode ? styles['dark-mode'] : ''}`}>
       <header className={styles.header}>
-        <WalletIcon className={styles.icon} />
-        <div className={styles.headerText}>
-          <h1>Finanças em Foco</h1>
-          <span className={styles.slogan}>Seu controle financeiro, simplificado.</span>
+        <div className={styles.logo}>
+          <FaWallet className={styles.icon} />
+          <h1 className={styles.title}>Finanças em Foco</h1>
         </div>
-        <nav>
-          <a href="#">Home</a>
-          <a href="#">Relatórios</a>
-          <a href="#">Configurações</a>
+        <div className={styles.headerRight}>
+          <motion.button
+            onClick={toggleSidebar} // Garante que o evento onClick está correto
+            className={styles.sidebarToggle}
+            whileHover={{ scale: 1.1 }}
+            whileTap={{ scale: 0.95 }}
+          >
+            <FaFilter className={styles.sidebarIcon} />
+          </motion.button>
           <button onClick={toggleDarkMode} className={styles.darkModeToggle}>
-            {isDarkMode ? <SunIcon className={styles.darkModeIcon} /> : <MoonIcon className={styles.darkModeIcon} />}
+            {isDarkMode ? <FaSun className={styles.darkModeIcon} /> : <FaMoon className={styles.darkModeIcon} />}
           </button>
-        </nav>
+        </div>
       </header>
 
       <main className={styles.main}>
-        <section className={styles.dashboardTop}>
-          <div className={styles.metricCard}>
-            <h3 className={styles.metricTitle}>Total Gasto Este Mês</h3>
-            <p className={styles.metricValue}>R$ {totalGastoEsteMes}</p>
+        <motion.div
+          className={`${styles.sidebar} ${isSidebarOpen ? styles.sidebarOpen : ''}`}
+          initial={{ x: '-100%' }}
+          animate={{ x: isSidebarOpen ? 0 : '-100%' }}
+          transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+        >
+          <h2 className={styles.sidebarTitle}>Filtros Avançados</h2>
+          <div className={styles.sidebarFilters}>
+            <select
+              value={filtroCategoria}
+              onChange={(e) => setFiltroCategoria(e.target.value)}
+              className={styles.sidebarSelect}
+            >
+              <option value="todas">Todas as Categorias</option>
+              {Object.keys(categorias).map((categoria) => (
+                <option key={categoria} value={categoria}>{categoria}</option>
+              ))}
+            </select>
+            <select
+              value={filtroPeriodo}
+              onChange={(e) => setFiltroPeriodo(e.target.value)}
+              className={styles.sidebarSelect}
+            >
+              <option value="todos">Todos os Períodos</option>
+              <option value="esteMes">Este Mês</option>
+              <option value="mesPassado">Mês Passado</option>
+            </select>
           </div>
-          <div className={styles.metricCard}>
-            <h3 className={styles.metricTitle}>Categoria Mais Gastadora</h3>
-            <p className={styles.metricValue}>{categoriaMaisGastadora}</p>
-          </div>
-          <div className={styles.metricCard}>
-            <h3 className={styles.metricTitle}>Média de Gasto Diário</h3>
-            <p className={styles.metricValue}>R$ {mediaGastoDiario}</p>
-          </div>
-          <div className={styles.metricCard}>
-            <h3 className={styles.metricTitle}>Média de Gastos Mensal</h3>
-            <p className={styles.metricValue}>R$ {mediaGastosMensal}</p>
-          </div>
-          <div className={styles.metricCard}>
-            <h3 className={styles.metricTitle}>Meta de Economia Mensal</h3>
-            <p className={styles.metricValue}>
-              R${' '}
+          <button onClick={toggleSidebar} className={styles.sidebarClose}>Fechar</button>
+        </motion.div>
+
+        <div className={styles.content}>
+          <section className={styles.summary}>
+            <motion.div
+              className={styles.summaryCard}
+              whileHover={{ scale: 1.05 }}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.1 }}
+            >
+              <FaMoneyBillWave className={styles.summaryIcon} />
+              <h3>Total Gasto Este Mês</h3>
+              <p className={styles.summaryValue}>R$ {totalGastoEsteMes}</p>
+            </motion.div>
+            <motion.div
+              className={styles.summaryCard}
+              whileHover={{ scale: 1.05 }}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.2 }}
+            >
+              <FaPiggyBank className={styles.summaryIcon} />
+              <h3>Categoria Mais Gastadora</h3>
+              <p className={styles.summaryValue}>{categoriaMaisGastadora}</p>
+            </motion.div>
+            <motion.div
+              className={styles.summaryCard}
+              whileHover={{ scale: 1.05 }}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.3 }}
+            >
+              <FaCalendarAlt className={styles.summaryIcon} />
+              <h3>Média de Gasto Diário</h3>
+              <p className={styles.summaryValue}>R$ {mediaGastoDiario}</p>
+            </motion.div>
+            <motion.div
+              className={styles.summaryCard}
+              whileHover={{ scale: 1.05 }}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.4 }}
+            >
+              <FaPiggyBank className={styles.summaryIcon} />
+              <h3>Meta de Economia</h3>
               <motion.input
                 type="number"
                 className={styles.metaInput}
@@ -374,152 +396,175 @@ const Gastos: React.FC = () => {
                 onChange={(e) => setMetaEconomiaMensal(Number(e.target.value))}
                 whileFocus={{ scale: 1.05 }}
               />
-            </p>
-          </div>
-          <div className={styles.metricCard}>
-            <h3 className={styles.metricTitle}>Economia Potencial</h3>
-            <p className={styles.metricValue}>R$ {economiaPotencial}</p>
-          </div>
-        </section>
+              <p className={styles.summarySubValue}>Economia Potencial: R$ {economiaPotencial}</p>
+            </motion.div>
+          </section>
 
-        <section className={styles.inputSection}>
-          <motion.input
-            type="text"
-            placeholder="Descrição do gasto"
-            value={novoGasto}
-            name="descricaoGasto"
-            onChange={handleInputChange}
-            className={styles.inputField}
-          />
-          <motion.input
-            type="text"
-            placeholder="Valor (ex: 65,00)"
-            value={valorGasto}
-            name="valorGasto"
-            onChange={handleInputChange}
-            className={styles.inputField}
-          />
-          {categoriaPrevista && <div className={styles.categoriaPrevista}>Categoria: {categoriaPrevista}</div>}
-          <div className={styles.prioridadeInput}>
-            <label htmlFor="prioridadeGasto" className={styles.prioridadeLabel}>
-              Prioridade:
-            </label>
-            <select
-              id="prioridadeGasto"
-              value={prioridadeGasto}
-              onChange={(e) => setPrioridadeGasto(e.target.value as 'essencial' | 'naoEssencial')}
-              className={styles.selectInput}
+          <section className={styles.actions}>
+            <motion.button
+              className={styles.addButton}
+              onClick={() => setIsModalOpen(true)}
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
             >
-              <option value="essencial">Essencial</option>
-              <option value="naoEssencial">Não Essencial</option>
-            </select>
-          </div>
-          <motion.button onClick={adicionarGasto} className={styles.addButton}>
-            {loading ? <div className={styles.spinner}></div> : 'Adicionar Gasto'}
-          </motion.button>
-        </section>
+              <FaPlusCircle className={styles.addIcon} /> Adicionar Gasto
+            </motion.button>
+          </section>
 
-        <section className={styles.gastosRecentes}>
-          <h2>Gastos Recentes</h2>
-          <div className={styles.tableContainer}>
-            <table className={styles.table}>
-              <thead>
-                <tr>
-                  <th>Descrição</th>
-                  <th>Valor</th>
-                  <th>Categoria</th>
-                  <th>Data</th>
-                  <th>Prioridade</th>
-                  <th></th>
-                </tr>
-              </thead>
-              <tbody>
-                {gastosFiltrados.map((gasto) => (
-                  <tr key={gasto.id}>
-                    <td>{gasto.descricao}</td>
-                    <td>R$ {gasto.valor.toFixed(2)}</td>
-                    <td style={{ color: coresCategorias[gasto.categoria] }}>{gasto.categoria}</td>
-                    <td>{gasto.data}</td>
-                    <td>
-                      <span
-                        className={
-                          gasto.prioridade === 'essencial'
-                            ? styles.prioridadeEssencial
-                            : styles.prioridadeNaoEssencial
-                        }
-                      >
-                        {gasto.prioridade}
-                      </span>
-                    </td>
-                    <td>
-                      <button onClick={() => removerGasto(gasto.id)} className={styles.deleteButton}>
-                        <TrashIcon className={styles.deleteIcon} />
-                      </button>
-                    </td>
+          <section className={styles.recentExpenses}>
+            <h2 className={styles.sectionTitle}>Gastos Recentes</h2>
+            <div className={styles.tableContainer}>
+              <table className={styles.table}>
+                <thead>
+                  <tr>
+                    <th>Descrição</th>
+                    <th>Valor</th>
+                    <th>Categoria</th>
+                    <th>Data</th>
+                    <th>Prioridade</th>
+                    <th>Ações</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </section>
-
-        <section className={styles.filtros}>
-          <h2>Filtros</h2>
-          <div className={styles.filterContainer}>
-            <label htmlFor="filtroCategoria">
-              <FilterIcon className={styles.icon} /> Categoria:
-            </label>
-            <select
-              id="filtroCategoria"
-              value={filtroCategoria}
-              onChange={(e) => setFiltroCategoria(e.target.value)}
-              className={styles.selectInput}
-            >
-              <option value="todas">Todas</option>
-              {Object.keys(categorias).map((categoria) => (
-                <option key={categoria} value={categoria}>{categoria}</option>
-              ))}
-            </select>
-            <label htmlFor="filtroPeriodo">
-              <FilterIcon className={styles.icon} /> Período:
-            </label>
-            <select
-              id="filtroPeriodo"
-              value={filtroPeriodo}
-              onChange={(e) => setFiltroPeriodo(e.target.value)}
-              className={styles.selectInput}
-            >
-              <option value="todos">Todos</option>
-              <option value="esteMes">Este Mês</option>
-              <option value="mesPassado">Mês Passado</option>
-            </select>
-          </div>
-        </section>
-
-        <section className={styles.graficos}>
-          <h2>Análise Visual</h2>
-          <div className={styles.chartContainer}>
-            <div className={styles.pieChart}>
-              <Pie data={dadosGraficoPizza} options={optionsGraficoPizza} />
+                </thead>
+                <tbody>
+                  {gastosFiltrados.map((gasto) => (
+                    <motion.tr
+                      key={gasto.id}
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      transition={{ delay: 0.1 }}
+                    >
+                      <td>{gasto.descricao}</td>
+                      <td>R$ {gasto.valor.toFixed(2)}</td>
+                      <td style={{ color: coresCategorias[gasto.categoria] }}>{gasto.categoria}</td>
+                      <td>{new Date(gasto.data).toLocaleDateString('pt-BR')}</td>
+                      <td>
+                        <span
+                          className={
+                            gasto.prioridade === 'essencial'
+                              ? styles.prioridadeEssencial
+                              : styles.prioridadeNaoEssencial
+                          }
+                        >
+                          {gasto.prioridade === 'essencial' ? 'Essencial' : 'Não Essencial'}
+                        </span>
+                      </td>
+                      <td>
+                        <motion.button
+                          onClick={() => removerGasto(gasto.id)}
+                          className={styles.deleteButton}
+                          whileHover={{ scale: 1.1 }}
+                          whileTap={{ scale: 0.95 }}
+                        >
+                          <FaTrash className={styles.deleteIcon} />
+                        </motion.button>
+                      </td>
+                    </motion.tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
-            <div className={styles.barChart}>
-              <Bar data={dadosGraficoBarras} options={optionsGraficoBarras} />
-            </div>
-          </div>
-        </section>
+          </section>
 
-        <section className={styles.relatorios}>
-          <motion.button className={styles.reportButton} whileTap={{ scale: 0.95 }}>
-            <FileAltIcon className={styles.icon} /> Gerar Relatório
-          </motion.button>
-        </section>
+          <section className={styles.charts}>
+            <div className={styles.chartHeader}>
+              <h2 className={styles.sectionTitle}>Análise Visual</h2>
+              <motion.button
+                onClick={toggleSidebar} // Garante que o evento onClick está correto
+                className={styles.filterChartButton}
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+              >
+                <FaFilter className={styles.filterChartIcon} /> Filtros
+              </motion.button>
+            </div>
+            <div className={styles.chartContainer}>
+              <motion.div
+                className={styles.pieChart}
+                initial={{ opacity: 0, scale: 0.8 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ delay: 0.2 }}
+              >
+                <Pie data={dadosGraficoPizza} options={optionsGraficoPizza} />
+              </motion.div>
+              <motion.div
+                className={styles.barChart}
+                initial={{ opacity: 0, scale: 0.8 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ delay: 0.3 }}
+              >
+                <Bar data={dadosGraficoBarras} options={optionsGraficoBarras} />
+              </motion.div>
+            </div>
+          </section>
+        </div>
       </main>
 
+      {isModalOpen && (
+        <motion.div
+          className={styles.modalOverlay}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+        >
+          <motion.div
+            className={styles.modal}
+            initial={{ y: -50, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            exit={{ y: -50, opacity: 0 }}
+          >
+            <h2 className={styles.modalTitle}>Adicionar Novo Gasto</h2>
+            <div className={styles.inputGroup}>
+              <input
+                type="text"
+                placeholder="Descrição do gasto"
+                value={novoGasto}
+                name="descricaoGasto"
+                onChange={handleInputChange}
+                className={styles.inputField}
+              />
+              <input
+                type="text"
+                placeholder="Valor (ex: 65,00)"
+                value={valorGasto}
+                name="valorGasto"
+                onChange={handleInputChange}
+                className={styles.inputField}
+              />
+            </div>
+            <div className={styles.inputGroup}>
+              {categoriaPrevista && (
+                <div className={styles.categoriaPrevista}>Categoria Sugerida: {categoriaPrevista}</div>
+              )}
+              <div className={styles.prioridadeInput}>
+                <label htmlFor="prioridadeGasto" className={styles.prioridadeLabel}>Prioridade:</label>
+                <select
+                  id="prioridadeGasto"
+                  value={prioridadeGasto}
+                  onChange={(e) => setPrioridadeGasto(e.target.value as 'essencial' | 'naoEssencial')}
+                  className={styles.selectInput}
+                >
+                  <option value="essencial">Essencial</option>
+                  <option value="naoEssencial">Não Essencial</option>
+                </select>
+              </div>
+            </div>
+            <div className={styles.modalButtons}>
+              <motion.button
+                onClick={adicionarGasto}
+                className={styles.modalAddButton}
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+              >
+                {loading ? <div className={styles.spinner}></div> : 'Adicionar'}
+              </motion.button>
+              <button onClick={() => setIsModalOpen(false)} className={styles.modalCancelButton}>Cancelar</button>
+            </div>
+          </motion.div>
+        </motion.div>
+      )}
+
       <footer className={styles.footer}>
-        <p>© 2024 Finanças em Foco.</p>
-        <p>
-          <a href="#">Termos de Uso</a> | <a href="#">Privacidade</a>
-        </p>
+        <p>© {new Date().getFullYear()} Finanças em Foco. Todos os direitos reservados.</p>
       </footer>
     </div>
   );
