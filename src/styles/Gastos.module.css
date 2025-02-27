@@ -331,8 +331,10 @@
 
 .filterContainer {
   display: flex;
-  gap: 1rem;
+
+  gap: 5rem;
   flex-wrap: wrap;
+  margin-left: 170px
 }
 
 .filterLabel {
