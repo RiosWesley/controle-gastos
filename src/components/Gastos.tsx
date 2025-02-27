@@ -299,14 +299,7 @@ const Gastos: React.FC = () => {
           <h1 className={styles.title}>Finanças em Foco</h1>
         </div>
         <div className={styles.headerRight}>
-          <motion.button
-            onClick={toggleSidebar} // Garante que o evento onClick está correto
-            className={styles.sidebarToggle}
-            whileHover={{ scale: 1.1 }}
-            whileTap={{ scale: 0.95 }}
-          >
-            <FaFilter className={styles.sidebarIcon} />
-          </motion.button>
+
           <button onClick={toggleDarkMode} className={styles.darkModeToggle}>
             {isDarkMode ? <FaSun className={styles.darkModeIcon} /> : <FaMoon className={styles.darkModeIcon} />}
           </button>
@@ -411,6 +404,64 @@ const Gastos: React.FC = () => {
             </motion.button>
           </section>
 
+          <section className={styles.charts}>
+              <h2 className={styles.sectionTitle}>Filtros</h2>
+              <div className={styles.chartHeader}>
+                <label htmlFor="filtroCategoria">
+                  <FaFilter className={styles.filterChartIcon} /> Categoria:
+                </label>
+                <select
+                  id="filtroCategoria"
+                  value={filtroCategoria}
+                  onChange={(e) => setFiltroCategoria(e.target.value)}
+                  className={styles.selectInput}
+                >
+                  <option value="todas">Todas</option>
+                  {Object.keys(categorias).map((categoria) => (
+                    <option key={categoria} value={categoria}>{categoria}</option>
+                  ))}
+                </select>
+                <label htmlFor="filtroPeriodo">
+                  <FaFilter className={styles.filterChartIcon} /> Período:
+                </label>
+                <select
+                  id="filtroPeriodo"
+                  value={filtroPeriodo}
+                  onChange={(e) => setFiltroPeriodo(e.target.value)}
+                  className={styles.selectInput}
+                >
+                  <option value="todos">Todos</option>
+                  <option value="esteMes">Este Mês</option>
+                  <option value="mesPassado">Mês Passado</option>
+                </select>
+              </div>
+          </section>
+
+          <section className={styles.charts}>
+            <div className={styles.chartHeader}>
+              <h2 className={styles.sectionTitle}>Análise Visual</h2>
+
+            </div>
+            <div className={styles.chartContainer}>
+              <motion.div
+                className={styles.pieChart}
+                initial={{ opacity: 0, scale: 0.8 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ delay: 0.2 }}
+              >
+                <Pie data={dadosGraficoPizza} options={optionsGraficoPizza} />
+              </motion.div>
+              <motion.div
+                className={styles.barChart}
+                initial={{ opacity: 0, scale: 0.8 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ delay: 0.3 }}
+              >
+                <Bar data={dadosGraficoBarras} options={optionsGraficoBarras} />
+              </motion.div>
+            </div>
+          </section>
+
           <section className={styles.recentExpenses}>
             <h2 className={styles.sectionTitle}>Gastos Recentes</h2>
             <div className={styles.tableContainer}>
@@ -462,38 +513,6 @@ const Gastos: React.FC = () => {
                   ))}
                 </tbody>
               </table>
-            </div>
-          </section>
-
-          <section className={styles.charts}>
-            <div className={styles.chartHeader}>
-              <h2 className={styles.sectionTitle}>Análise Visual</h2>
-              <motion.button
-                onClick={toggleSidebar} // Garante que o evento onClick está correto
-                className={styles.filterChartButton}
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-              >
-                <FaFilter className={styles.filterChartIcon} /> Filtros
-              </motion.button>
-            </div>
-            <div className={styles.chartContainer}>
-              <motion.div
-                className={styles.pieChart}
-                initial={{ opacity: 0, scale: 0.8 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ delay: 0.2 }}
-              >
-                <Pie data={dadosGraficoPizza} options={optionsGraficoPizza} />
-              </motion.div>
-              <motion.div
-                className={styles.barChart}
-                initial={{ opacity: 0, scale: 0.8 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ delay: 0.3 }}
-              >
-                <Bar data={dadosGraficoBarras} options={optionsGraficoBarras} />
-              </motion.div>
             </div>
           </section>
         </div>

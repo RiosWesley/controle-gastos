@@ -183,6 +183,15 @@
   overflow-x: hidden;
 }
 
+.content section { /* ISSO SELECIONA AS TAGS <section> QUE ESTÃO *DENTRO* DE ELEMENTOS COM A CLASSE .content */
+  margin-bottom: 20px; /* Ajuste o valor para o espaçamento desejado */
+}
+
+/* Opcional: Remover margin-bottom da última <section> dentro de .content */
+.content section:last-child {
+  margin-bottom: 0;
+}
+
 /* Resumo (Summary) */
 .summary {
   display: grid;
@@ -365,6 +374,7 @@
 
 .filterChartIcon {
   font-size: 1rem;
+  color: var(--primary-color);
 }
 
 .chartContainer {
