@@ -9,16 +9,18 @@ import {
   CategoryScale,
   LinearScale,
   BarElement,
+  LineElement,
+  PointElement,
   Title,
   ChartOptions,
 } from 'chart.js';
-import { Pie, Bar } from 'react-chartjs-2';
+import { Pie, Bar, Line } from 'react-chartjs-2';
 import styles from '../styles/Gastos.module.css';
 import {
   FaWallet,
   FaChartPie,
   FaFilter,
-  FaFileAlt,
+  FaFileExport,
   FaTrash,
   FaPlusCircle,
   FaMoon,
@@ -26,9 +28,13 @@ import {
   FaMoneyBillWave,
   FaPiggyBank,
   FaCalendarAlt,
+  FaSearch,
+  FaExclamationTriangle,
 } from 'react-icons/fa';
+import { toast, ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
-ChartJS.register(ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement, Title);
+ChartJS.register(ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement, LineElement, PointElement, Title);
 
 interface Gasto {
   id: number;
@@ -65,18 +71,20 @@ const Gastos: React.FC = () => {
   const [gastos, setGastos] = useState<Gasto[]>([]);
   const [novoGasto, setNovoGasto] = useState('');
   const [valorGasto, setValorGasto] = useState('');
+  const [dataGasto, setDataGasto] = useState(new Date().toISOString().split('T')[0]);
   const [categoriaPrevista, setCategoriaPrevista] = useState('');
   const [filtroCategoria, setFiltroCategoria] = useState('todas');
   const [filtroPeriodo, setFiltroPeriodo] = useState('todos');
+  const [searchTerm, setSearchTerm] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
   const [loading, setLoading] = useState(false);
   const [isDarkMode, setIsDarkMode] = useState(
     () => typeof localStorage !== 'undefined' && localStorage.getItem('darkMode') === 'true'
   );
   const [metaEconomiaMensal, setMetaEconomiaMensal] = useState<number>(1000);
   const [prioridadeGasto, setPrioridadeGasto] = useState<'essencial' | 'naoEssencial'>('naoEssencial');
-  const [mediaGastosMensal, setMediaGastosMensal] = useState<number>(0);
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const itemsPerPage = 10;
 
   useEffect(() => {
     const initialExpenses: Gasto[] = [
@@ -300,23 +308,24 @@ const Gastos: React.FC = () => {
     }
   }, [isDarkMode]);
 
-  useEffect(() => {
-    calcularMediaGastosMensal();
-  }, [gastos]);
-
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     if (name === 'descricaoGasto') setNovoGasto(value);
     if (name === 'valorGasto') setValorGasto(value);
+    if (name === 'dataGasto') setDataGasto(value);
   };
 
   const adicionarGasto = () => {
-    if (!novoGasto.trim() || !valorGasto.trim()) return;
+    if (!novoGasto.trim() || !valorGasto.trim() || !dataGasto) {
+      toast.error('Preencha todos os campos!');
+      return;
+    }
 
     setLoading(true);
     setTimeout(() => {
       const valor = parseFloat(valorGasto.replace(',', '.'));
       if (isNaN(valor)) {
+        toast.error('Valor inválido!');
         setLoading(false);
         return;
       }
@@ -326,24 +335,42 @@ const Gastos: React.FC = () => {
         descricao: novoGasto,
         valor,
         categoria: categorizarGasto(novoGasto),
-        data: new Date().toISOString().split('T')[0],
+        data: dataGasto,
         prioridade: prioridadeGasto,
       };
 
       setGastos([...gastos, novo]);
       setNovoGasto('');
       setValorGasto('');
+      setDataGasto(new Date().toISOString().split('T')[0]);
       setLoading(false);
       setIsModalOpen(false);
+      toast.success('Gasto adicionado com sucesso!');
     }, 750);
   };
 
   const removerGasto = (id: number) => {
     setGastos(gastos.filter((gasto) => gasto.id !== id));
+    toast.info('Gasto removido!');
+  };
+
+  const exportarCSV = () => {
+    const csv = [
+      'ID,Descrição,Valor,Categoria,Data,Prioridade',
+      ...gastos.map((g) => `${g.id},"${g.descricao}",${g.valor},${g.categoria},${g.data},${g.prioridade}`),
+    ].join('\n');
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'gastos.csv';
+    a.click();
+    URL.revokeObjectURL(url);
+    toast.success('Dados exportados com sucesso!');
   };
 
   const gastosFiltrados = useMemo(() => {
-    return gastos.filter((gasto) => {
+    let filtered = gastos.filter((gasto) => {
       if (filtroCategoria !== 'todas' && gasto.categoria !== filtroCategoria) return false;
       if (filtroPeriodo === 'todos') return true;
 
@@ -369,24 +396,21 @@ const Gastos: React.FC = () => {
           return true;
       }
     });
-  }, [gastos, filtroCategoria, filtroPeriodo]);
 
-  const calcularMediaGastosMensal = () => {
-    if (gastos.length === 0) {
-      setMediaGastosMensal(0);
-      return;
+    if (searchTerm) {
+      filtered = filtered.filter((g) => g.descricao.toLowerCase().includes(searchTerm.toLowerCase()));
     }
 
-    const totaisMensais: { [key: string]: number } = {};
-    gastos.forEach((gasto) => {
-      const mesAno = gasto.data.substring(0, 7);
-      totaisMensais[mesAno] = (totaisMensais[mesAno] || 0) + gasto.valor;
-    });
+    return filtered;
+  }, [gastos, filtroCategoria, filtroPeriodo, searchTerm]);
 
-    const meses = Object.keys(totaisMensais).length;
-    const somaTotais = Object.values(totaisMensais).reduce((soma, valor) => soma + valor, 0);
-    setMediaGastosMensal(parseFloat((somaTotais / meses).toFixed(2)));
-  };
+  const paginatedGastos = useMemo(() => {
+    const start = (currentPage - 1) * itemsPerPage;
+    const end = start + itemsPerPage;
+    return gastosFiltrados.slice(start, end);
+  }, [gastosFiltrados, currentPage]);
+
+  const totalPages = Math.ceil(gastosFiltrados.length / itemsPerPage);
 
   const coresCategorias: { [key: string]: string } = {
     alimentacao: '#F4A261',
@@ -430,55 +454,45 @@ const Gastos: React.FC = () => {
     ],
   }), [gastosFiltrados]);
 
+  const dadosGraficoTendencia = useMemo(() => {
+    const totaisMensais: { [key: string]: number } = {};
+    gastos.forEach((gasto) => {
+      const mesAno = gasto.data.substring(0, 7);
+      totaisMensais[mesAno] = (totaisMensais[mesAno] || 0) + gasto.valor;
+    });
+
+    return {
+      labels: Object.keys(totaisMensais),
+      datasets: [
+        {
+          label: 'Gastos Mensais',
+          data: Object.values(totaisMensais),
+          fill: false,
+          borderColor: '#2A9D8F',
+          backgroundColor: 'rgba(42, 157, 143, 0.2)',
+          tension: 0.4,
+        },
+      ],
+    };
+  }, [gastos]);
+
   const optionsGraficoPizza: ChartOptions<'pie'> = {
     plugins: {
-      tooltip: {
-        backgroundColor: 'rgba(26, 32, 44, 0.9)',
-        cornerRadius: 8,
-        callbacks: {
-          label: (context: any) => {
-            const label = context.label || '';
-            const value = context.parsed || 0;
-            const total = context.dataset.data.reduce((acc: number, val: number) => acc + val, 0);
-            const percentage = ((value / total) * 100).toFixed(2);
-            return `${label}: R$ ${value.toFixed(2)} (${percentage}%)`;
-          },
-        },
-      },
-      legend: {
-        position: 'bottom' as const,
-        labels: {
-          color: isDarkMode ? '#E2E8F0' : '#1F2A44',
-          usePointStyle: true,
-          padding: 15,
-          font: {
-            size: 12,
-            weight: 'bold' as const,
-          },
-        },
-      },
+      legend: { position: 'bottom' },
+      tooltip: { callbacks: { label: (ctx) => `${ctx.label}: R$ ${ctx.parsed.toFixed(2)}` } },
     },
-    animation: { animateRotate: true, animateScale: true },
   };
 
   const optionsGraficoBarras: ChartOptions<'bar'> = {
-    plugins: {
-      tooltip: {
-        backgroundColor: 'rgba(26, 32, 44, 0.9)',
-        cornerRadius: 8,
-        callbacks: {
-          label: (context: any) => `${context.dataset.label || ''}: R$ ${context.parsed.y.toFixed(2)}`,
-        },
-      },
-      legend: { display: false },
-    },
+    plugins: { legend: { display: false } },
+    scales: { y: { beginAtZero: true } },
+  };
+
+  const optionsGraficoTendencia: ChartOptions<'line'> = {
+    plugins: { legend: { position: 'top' } },
     scales: {
-      y: {
-        beginAtZero: true,
-        ticks: { color: isDarkMode ? '#A0AEC0' : '#64748B', font: { size: 12 } },
-        grid: { color: isDarkMode ? 'rgba(160, 174, 192, 0.1)' : 'rgba(100, 116, 139, 0.1)' },
-      },
-      x: { ticks: { color: isDarkMode ? '#A0AEC0' : '#64748B', font: { size: 12 } } },
+      y: { beginAtZero: true, title: { display: true, text: 'Valor (R$)' } },
+      x: { title: { display: true, text: 'Mês' } },
     },
   };
 
@@ -498,9 +512,9 @@ const Gastos: React.FC = () => {
   }, [gastosFiltrados]);
   const mediaGastoDiario = useMemo(() => (parseFloat(totalGastoEsteMes) / 30).toFixed(2), [totalGastoEsteMes]);
   const economiaPotencial = useMemo(() => (metaEconomiaMensal - parseFloat(totalGastoEsteMes)).toFixed(2), [metaEconomiaMensal, totalGastoEsteMes]);
+  const alertaGastoExcessivo = parseFloat(totalGastoEsteMes) > metaEconomiaMensal;
 
   const toggleDarkMode = () => setIsDarkMode(!isDarkMode);
-  const toggleSidebar = () => setIsSidebarOpen((prev) => !prev);
 
   return (
     <div className={`${styles.container} ${isDarkMode ? styles['dark-mode'] : ''}`}>
@@ -510,6 +524,14 @@ const Gastos: React.FC = () => {
           <h1 className={styles.title}>Finanças em Foco</h1>
         </div>
         <div className={styles.headerRight}>
+          <motion.button
+            onClick={exportarCSV}
+            className={styles.exportButton}
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+          >
+            <FaFileExport /> Exportar
+          </motion.button>
           <button onClick={toggleDarkMode} className={styles.darkModeToggle}>
             {isDarkMode ? <FaSun className={styles.darkModeIcon} /> : <FaMoon className={styles.darkModeIcon} />}
           </button>
@@ -517,92 +539,44 @@ const Gastos: React.FC = () => {
       </header>
 
       <main className={styles.main}>
-        <motion.div
-          className={`${styles.sidebar} ${isSidebarOpen ? styles.sidebarOpen : ''}`}
-          initial={{ x: '-100%' }}
-          animate={{ x: isSidebarOpen ? 0 : '-100%' }}
-          transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-        >
-          <h2 className={styles.sidebarTitle}>Filtros Avançados</h2>
-          <div className={styles.sidebarFilters}>
-            <select
-              value={filtroCategoria}
-              onChange={(e) => setFiltroCategoria(e.target.value)}
-              className={styles.sidebarSelect}
-            >
-              <option value="todas">Todas as Categorias</option>
-              {Object.keys(categorias).map((categoria) => (
-                <option key={categoria} value={categoria}>{categoria}</option>
-              ))}
-            </select>
-            <select
-              value={filtroPeriodo}
-              onChange={(e) => setFiltroPeriodo(e.target.value)}
-              className={styles.sidebarSelect}
-            >
-              <option value="todos">Todos os Períodos</option>
-              <option value="esteMes">Este Mês</option>
-              <option value="mesPassado">Mês Passado</option>
-              <option value="doisMesesAtras">Dois Meses Atrás</option>
-              <option value="tresMesesAtras">Três Meses Atrás</option>
-            </select>
-          </div>
-          <button onClick={toggleSidebar} className={styles.sidebarClose}>Fechar</button>
-        </motion.div>
-
         <div className={styles.content}>
           <section className={styles.summary}>
-            <motion.div
-              className={styles.summaryCard}
-              whileHover={{ scale: 1.05 }}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.1 }}
-            >
+            <motion.div className={styles.summaryCard} whileHover={{ scale: 1.05 }}>
               <FaMoneyBillWave className={styles.summaryIcon} />
               <h3>Total Gasto Este Mês</h3>
               <p className={styles.summaryValue}>R$ {totalGastoEsteMes}</p>
             </motion.div>
-            <motion.div
-              className={styles.summaryCard}
-              whileHover={{ scale: 1.05 }}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.2 }}
-            >
+            <motion.div className={styles.summaryCard} whileHover={{ scale: 1.05 }}>
               <FaPiggyBank className={styles.summaryIcon} />
               <h3>Categoria Mais Gastadora</h3>
               <p className={styles.summaryValue}>{categoriaMaisGastadora}</p>
             </motion.div>
-            <motion.div
-              className={styles.summaryCard}
-              whileHover={{ scale: 1.05 }}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.3 }}
-            >
+            <motion.div className={styles.summaryCard} whileHover={{ scale: 1.05 }}>
               <FaCalendarAlt className={styles.summaryIcon} />
               <h3>Média de Gasto Diário</h3>
               <p className={styles.summaryValue}>R$ {mediaGastoDiario}</p>
             </motion.div>
-            <motion.div
-              className={styles.summaryCard}
-              whileHover={{ scale: 1.05 }}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.4 }}
-            >
+            <motion.div className={styles.summaryCard} whileHover={{ scale: 1.05 }}>
               <FaPiggyBank className={styles.summaryIcon} />
               <h3>Meta de Economia</h3>
-              <motion.input
+              <input
                 type="number"
                 className={styles.metaInput}
                 value={metaEconomiaMensal}
                 onChange={(e) => setMetaEconomiaMensal(Number(e.target.value))}
-                whileFocus={{ scale: 1.05 }}
               />
               <p className={styles.summarySubValue}>Economia Potencial: R$ {economiaPotencial}</p>
             </motion.div>
+            {alertaGastoExcessivo && (
+              <motion.div
+                className={styles.alertCard}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.5 }}
+              >
+                <FaExclamationTriangle /> Atenção: Gastos acima da meta!
+              </motion.div>
+            )}
           </section>
 
           <section className={styles.actions}>
@@ -614,6 +588,17 @@ const Gastos: React.FC = () => {
             >
               <FaPlusCircle className={styles.addIcon} /> Adicionar Gasto
             </motion.button>
+          </section>
+
+          <section className={styles.search}>
+            <FaSearch className={styles.searchIcon} />
+            <input
+              type="text"
+              placeholder="Pesquisar gastos..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className={styles.searchInput}
+            />
           </section>
 
           <section className={styles.filters}>
@@ -652,25 +637,16 @@ const Gastos: React.FC = () => {
           </section>
 
           <section className={styles.charts}>
-            <div className={styles.chartHeader}>
-              <h2 className={styles.sectionTitle}>Análise Visual</h2>
-            </div>
+            <h2 className={styles.sectionTitle}>Análise Visual</h2>
             <div className={styles.chartContainer}>
-              <motion.div
-                className={styles.pieChart}
-                initial={{ opacity: 0, scale: 0.8 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ delay: 0.2 }}
-              >
+              <motion.div className={styles.pieChart} initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
                 <Pie data={dadosGraficoPizza} options={optionsGraficoPizza} />
               </motion.div>
-              <motion.div
-                className={styles.barChart}
-                initial={{ opacity: 0, scale: 0.8 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ delay: 0.3 }}
-              >
+              <motion.div className={styles.barChart} initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
                 <Bar data={dadosGraficoBarras} options={optionsGraficoBarras} />
+              </motion.div>
+              <motion.div className={styles.lineChart} initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+                <Line data={dadosGraficoTendencia} options={optionsGraficoTendencia} />
               </motion.div>
             </div>
           </section>
@@ -690,7 +666,7 @@ const Gastos: React.FC = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {gastosFiltrados.map((gasto) => (
+                  {paginatedGastos.map((gasto) => (
                     <motion.tr
                       key={gasto.id}
                       initial={{ opacity: 0 }}
@@ -727,6 +703,23 @@ const Gastos: React.FC = () => {
                 </tbody>
               </table>
             </div>
+            <div className={styles.pagination}>
+              <button
+                onClick={() => setCurrentPage((p) => Math.max(p - 1, 1))}
+                disabled={currentPage === 1}
+                className={styles.paginationButton}
+              >
+                Anterior
+              </button>
+              <span>Página {currentPage} de {totalPages}</span>
+              <button
+                onClick={() => setCurrentPage((p) => Math.min(p + 1, totalPages))}
+                disabled={currentPage === totalPages}
+                className={styles.paginationButton}
+              >
+                Próxima
+              </button>
+            </div>
           </section>
         </div>
       </main>
@@ -762,34 +755,38 @@ const Gastos: React.FC = () => {
                 onChange={handleInputChange}
                 className={styles.inputField}
               />
+              <input
+                type="date"
+                value={dataGasto}
+                name="dataGasto"
+                onChange={handleInputChange}
+                className={styles.inputField}
+              />
+              <select
+                value={prioridadeGasto}
+                onChange={(e) => setPrioridadeGasto(e.target.value as 'essencial' | 'naoEssencial')}
+                className={styles.selectInput}
+              >
+                <option value="essencial">Essencial</option>
+                <option value="naoEssencial">Não Essencial</option>
+              </select>
             </div>
-            <div className={styles.inputGroup}>
-              {categoriaPrevista && (
-                <div className={styles.categoriaPrevista}>Categoria Sugerida: {categoriaPrevista}</div>
-              )}
-              <div className={styles.prioridadeInput}>
-                <label htmlFor="prioridadeGasto" className={styles.prioridadeLabel}>Prioridade:</label>
-                <select
-                  id="prioridadeGasto"
-                  value={prioridadeGasto}
-                  onChange={(e) => setPrioridadeGasto(e.target.value as 'essencial' | 'naoEssencial')}
-                  className={styles.selectInput}
-                >
-                  <option value="essencial">Essencial</option>
-                  <option value="naoEssencial">Não Essencial</option>
-                </select>
-              </div>
-            </div>
+            {categoriaPrevista && (
+              <div className={styles.categoriaPrevista}>Categoria Sugerida: {categoriaPrevista}</div>
+            )}
             <div className={styles.modalButtons}>
               <motion.button
                 onClick={adicionarGasto}
                 className={styles.modalAddButton}
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
+                disabled={loading}
               >
                 {loading ? <div className={styles.spinner}></div> : 'Adicionar'}
               </motion.button>
-              <button onClick={() => setIsModalOpen(false)} className={styles.modalCancelButton}>Cancelar</button>
+              <button onClick={() => setIsModalOpen(false)} className={styles.modalCancelButton}>
+                Cancelar
+              </button>
             </div>
           </motion.div>
         </motion.div>
@@ -798,6 +795,18 @@ const Gastos: React.FC = () => {
       <footer className={styles.footer}>
         <p>© {new Date().getFullYear()} Finanças em Foco. Todos os direitos reservados.</p>
       </footer>
+
+      <ToastContainer
+        position="top-right"
+        autoClose={3000}
+        hideProgressBar={false}
+        newestOnTop={false}
+        closeOnClick
+        rtl={false}
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+      />
     </div>
   );
 };

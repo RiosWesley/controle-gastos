@@ -34,7 +34,7 @@
 .container {
   font-family: 'Inter', sans-serif;
   font-size: 16px;
-  width: 100vw; /* Usa 100% da largura da viewport */
+  width: 100vw;
   max-width: 1200px;
   margin: 0 auto;
   min-height: 100vh;
@@ -43,7 +43,7 @@
   background: var(--background-color);
   color: var(--text-color);
   transition: background 0.3s ease, color 0.3s ease;
-  overflow-x: hidden; /* Previne barras horizontais */
+  overflow-x: hidden;
 }
 
 /* Modo Escuro */
@@ -53,7 +53,7 @@
 }
 
 .dark-mode .header,
-.dark-mode .dashboard,
+.dark-mode .summary,
 .dark-mode .recentExpenses,
 .dark-mode .filters,
 .dark-mode .charts,
@@ -63,10 +63,10 @@
   border-color: var(--dark-text-color-secondary);
 }
 
-.dark-mode .metricCard,
+.dark-mode .summaryCard,
 .dark-mode .pieChart,
 .dark-mode .barChart,
-.dark-mode .summaryCard {
+.dark-mode .lineChart {
   background: var(--dark-card-background);
 }
 
@@ -78,14 +78,12 @@
 
 .dark-mode .sectionTitle,
 .dark-mode .filters label,
-.dark-mode .prioridadeLabel,
 .dark-mode .modalTitle {
   color: var(--dark-text-color-secondary);
 }
 
 .dark-mode .inputField,
-.dark-mode .selectInput,
-.dark-mode .sidebarSelect {
+.dark-mode .selectInput {
   background: var(--dark-card-background);
   border-color: var(--dark-text-color-secondary);
   color: var(--dark-text-color);
@@ -130,6 +128,7 @@
 .headerRight {
   display: flex;
   align-items: center;
+  gap: 1rem;
 }
 
 .darkModeToggle {
@@ -145,22 +144,23 @@
   transform: rotate(15deg);
 }
 
-.sidebarToggle {
-  background: none;
+.exportButton {
+  padding: 0.5rem 1rem;
+  background: var(--accent-color);
+  color: #FFFFFF;
   border: none;
+  border-radius: 0.375rem;
+  font-size: 0.875rem;
+  font-weight: 500;
   cursor: pointer;
-  font-size: 1.25rem;
-  color: var(--text-color-secondary);
-  margin-right: 1rem;
-  transition: transform 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  transition: background-color 0.2s ease;
 }
 
-.sidebarToggle:hover {
-  transform: rotate(15deg);
-}
-
-.sidebarIcon {
-  font-size: 1.25rem;
+.exportButton:hover {
+  background-color: var(--primary-color-light);
 }
 
 /* Conteúdo Principal */
@@ -174,7 +174,6 @@
   overflow-x: hidden;
 }
 
-/* Conteúdo - Centraliza e ocupa toda a largura */
 .content {
   padding: 1rem;
   width: 100%;
@@ -183,11 +182,10 @@
   overflow-x: hidden;
 }
 
-.content section { /* ISSO SELECIONA AS TAGS <section> QUE ESTÃO *DENTRO* DE ELEMENTOS COM A CLASSE .content */
-  margin-bottom: 20px; /* Ajuste o valor para o espaçamento desejado */
+.content section {
+  margin-bottom: 2rem;
 }
 
-/* Opcional: Remover margin-bottom da última <section> dentro de .content */
 .content section:last-child {
   margin-bottom: 0;
 }
@@ -212,7 +210,6 @@
   box-shadow: var(--shadow-sm);
   text-align: center;
   transition: transform 0.3s ease, box-shadow 0.3s ease;
-  width: 100%;
 }
 
 .summaryIcon {
@@ -232,6 +229,18 @@
   font-size: 0.875rem;
   color: var(--text-color-secondary);
   margin-top: 0.25rem;
+}
+
+.alertCard {
+  background: #FF6B6B;
+  color: #FFFFFF;
+  padding: 1rem;
+  border-radius: 0.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 500;
+  box-shadow: var(--shadow-sm);
 }
 
 /* Ações (Botão Adicionar Gasto) */
@@ -268,6 +277,119 @@
 .addIcon {
   margin-right: 0.5rem;
   font-size: 1.2rem;
+}
+
+/* Pesquisa */
+.search {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 1rem;
+  background: var(--section-background);
+  border-radius: 0.5rem;
+  box-shadow: var(--shadow-md);
+}
+
+.searchIcon {
+  font-size: 1.25rem;
+  color: var(--primary-color);
+}
+
+.searchInput {
+  padding: 0.75rem 1rem;
+  border: 1px solid var(--primary-color);
+  border-radius: 0.375rem;
+  font-size: 1rem;
+  color: var(--text-color);
+  background: var(--background-color);
+  width: 100%;
+  max-width: 300px;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.searchInput:focus {
+  outline: none;
+  border-color: var(--primary-color-dark);
+  box-shadow: 0 0 0 2px rgba(42, 157, 143, 0.2);
+}
+
+/* Filtros */
+.filters {
+  padding: 1rem;
+  background: var(--section-background);
+  border-radius: 0.5rem;
+  box-shadow: var(--shadow-md);
+  width: 100%;
+}
+
+.sectionTitle {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: var(--primary-color);
+  margin-bottom: 1rem;
+}
+
+.filterContainer {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.filterLabel {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.9rem;
+  color: var(--text-color-secondary);
+}
+
+.filterIcon {
+  font-size: 1rem;
+}
+
+.selectInput {
+  padding: 0.75rem 1rem;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  border-radius: 0.375rem;
+  font-size: 1rem;
+  color: var(--text-color);
+  background-color: var(--background-color);
+  appearance: none;
+  cursor: pointer;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.selectInput:focus {
+  outline: none;
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 2px rgba(42, 157, 143, 0.2);
+}
+
+/* Gráficos */
+.charts {
+  padding: 1rem;
+  background: var(--section-background);
+  border-radius: 0.5rem;
+  box-shadow: var(--shadow-md);
+  width: 100%;
+  overflow-x: hidden;
+}
+
+.chartContainer {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 1.5rem;
+  margin-top: 1rem;
+}
+
+.pieChart,
+.barChart,
+.lineChart {
+  background: var(--card-background);
+  border-radius: 0.5rem;
+  box-shadow: var(--shadow-sm);
+  padding: 1rem;
+  width: 100%;
 }
 
 /* Gastos Recentes */
@@ -329,31 +451,37 @@
   font-size: 1rem;
 }
 
-/* Gráficos */
-.charts {
-  padding: 1rem;
-  background: var(--section-background);
-  border-radius: 0.5rem;
-  box-shadow: var(--shadow-md);
-  width: 100%;
-  overflow-x: hidden;
+.prioridadeEssencial,
+.prioridadeNaoEssencial {
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  text-transform: capitalize;
+  display: inline-block;
 }
 
-.chartHeader {
+.prioridadeEssencial {
+  background-color: rgba(116, 198, 157, 0.2);
+  color: var(--primary-color-dark);
+  border: 1px solid #74C69D;
+}
+
+.prioridadeNaoEssencial {
+  background-color: rgba(233, 196, 106, 0.2);
+  color: var(--accent-color);
+  border: 1px solid #E9C46A;
+}
+
+.pagination {
   display: flex;
-  justify-content: space-between;
+  justify-content: center;
   align-items: center;
-  margin-bottom: 1rem;
+  gap: 1rem;
+  margin-top: 1rem;
 }
 
-.sectionTitle {
-  font-size: 1.5rem;
-  font-weight: 600;
-  color: var(--primary-color);
-  margin-bottom: 1rem;
-}
-
-.filterChartButton {
+.paginationButton {
   padding: 0.5rem 1rem;
   background: var(--primary-color);
   color: #FFFFFF;
@@ -363,100 +491,15 @@
   font-weight: 500;
   cursor: pointer;
   transition: background-color 0.2s ease;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
 }
 
-.filterChartButton:hover {
-  background-color: var(--primary-color-light);
+.paginationButton:disabled {
+  background: #CCC;
+  cursor: not-allowed;
 }
 
-.filterChartIcon {
-  font-size: 1rem;
-  color: var(--primary-color);
-}
-
-.chartContainer {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-  gap: 1rem;
-  margin-top: 1rem;
-  width: 100%;
-}
-
-.pieChart,
-.barChart {
-  background: var(--card-background);
-  border-radius: 0.5rem;
-  box-shadow: var(--shadow-sm);
-  padding: 1rem;
-  width: 100%;
-}
-
-/* Sidebar (Filtros Avançados) */
-.sidebar {
-  position: fixed;
-  top: 0;
-  left: -100%;
-  width: 300px;
-  height: 100vh;
-  background: var(--section-background);
-  padding: 1.5rem;
-  box-shadow: var(--shadow-md);
-  z-index: 1000;
-  transition: transform 0.3s ease;
-  overflow-y: auto;
-}
-
-.sidebarOpen {
-  transform: translateX(100%);
-}
-
-.sidebarTitle {
-  font-size: 1.25rem;
-  font-weight: 600;
-  color: var(--primary-color);
-  margin-bottom: 1rem;
-}
-
-.sidebarFilters {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-}
-
-.sidebarSelect {
-  padding: 0.75rem 1rem;
-  border: 1px solid rgba(0, 0, 0, 0.1);
-  border-radius: 0.375rem;
-  font-size: 1rem;
-  color: var(--text-color);
-  background-color: var(--background-color);
-  transition: border-color 0.2s ease, box-shadow 0.2s ease;
-}
-
-.sidebarSelect:focus {
-  outline: none;
-  border-color: var(--primary-color);
-  box-shadow: 0 0 0 2px rgba(42, 157, 143, 0.2);
-}
-
-.sidebarClose {
-  padding: 0.75rem 1.5rem;
-  background: var(--primary-color);
-  color: #FFFFFF;
-  border: none;
-  border-radius: 0.375rem;
-  font-size: 1rem;
-  font-weight: 500;
-  cursor: pointer;
-  margin-top: 1rem;
-  transition: background-color 0.2s ease;
-}
-
-.sidebarClose:hover {
-  background-color: var(--primary-color-light);
+.paginationButton:hover:not(:disabled) {
+  background: var(--primary-color-light);
 }
 
 /* Modal */
@@ -497,13 +540,6 @@
   margin-bottom: 1rem;
 }
 
-.prioridadeInput {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 1rem;
-  margin-bottom: 1rem;
-}
-
 .inputField {
   width: 100%;
   padding: 0.75rem 1rem;
@@ -521,24 +557,12 @@
   box-shadow: 0 0 0 2px rgba(42, 157, 143, 0.2);
 }
 
-.selectInput {
-  padding: 0.75rem 1rem;
-  border: 1px solid rgba(0, 0, 0, 0.1);
-  border-radius: 0.375rem;
-  font-size: 1rem;
-  color: var(--text-color);
-  background-color: var(--background-color);
-  appearance: none;
-  -webkit-appearance: none;
-  -moz-appearance: none;
-  cursor: pointer;
-  transition: border-color 0.2s ease, box-shadow 0.2s ease;
-}
-
-.selectInput:focus {
-  outline: none;
-  border-color: var(--primary-color);
-  box-shadow: 0 0 0 2px rgba(42, 157, 143, 0.2);
+.categoriaPrevista {
+  grid-column: span 2;
+  text-align: center;
+  font-size: 0.9rem;
+  color: var(--text-color-secondary);
+  margin-top: 0.5rem;
 }
 
 .modalButtons {
@@ -565,6 +589,11 @@
   background-color: var(--primary-color-light);
 }
 
+.modalAddButton:disabled {
+  background: #CCC;
+  cursor: not-allowed;
+}
+
 .modalCancelButton {
   padding: 0.75rem 1.5rem;
   background: var(--accent-color);
@@ -580,43 +609,6 @@
 
 .modalCancelButton:hover {
   background: var(--primary-color-light);
-}
-
-.categoriaPrevista {
-  grid-column: span 2;
-  text-align: center;
-  font-size: 0.9rem;
-  color: var(--text-color-secondary);
-  margin-top: 0.5rem;
-}
-
-.prioridadeLabel {
-  font-size: 0.9rem;
-  color: var(--text-color-secondary);
-  font-weight: 500;
-  margin-right: 0.5rem;
-}
-
-.prioridadeEssencial,
-.prioridadeNaoEssencial {
-  padding: 2px 8px;
-  border-radius: 12px;
-  font-size: 0.75rem;
-  font-weight: 500;
-  text-transform: capitalize;
-  display: inline-block;
-}
-
-.prioridadeEssencial {
-  background-color: rgba(116, 198, 157, 0.2);
-  color: var(--primary-color-dark);
-  border: 1px solid #74C69D;
-}
-
-.prioridadeNaoEssencial {
-  background-color: rgba(233, 196, 106, 0.2);
-  color: var(--accent-color);
-  border: 1px solid #E9C46A;
 }
 
 /* Spinner de Carregamento */
@@ -662,6 +654,16 @@
   border-bottom-style: solid;
 }
 
+/* Footer */
+.footer {
+  text-align: center;
+  padding: 1rem;
+  color: var(--text-color-secondary);
+  background: var(--section-background);
+  border-top: 1px solid rgba(0, 0, 0, 0.05);
+  width: 100%;
+}
+
 /* Media Queries */
 @media (max-width: 768px) {
   .container {
@@ -674,33 +676,15 @@
     padding: 0.5rem;
   }
 
-  .logo, .nav {
-    margin-bottom: 0.5rem;
-    justify-content: center;
-  }
-
-  .nav a {
-    margin-right: 0.5rem;
-    margin-left: 0.5rem;
-  }
-
-  .main {
-    padding: 0.5rem;
-  }
-
-  .content,
-  .summary,
-  .recentExpenses,
-  .charts {
-    padding: 0.5rem;
+  .headerRight {
+    margin-top: 0.5rem;
   }
 
   .summary {
     grid-template-columns: 1fr;
   }
 
-  .inputGroup,
-  .prioridadeInput {
+  .inputGroup {
     grid-template-columns: 1fr;
   }
 
@@ -709,18 +693,8 @@
     align-items: stretch;
   }
 
-  .filterGroup {
-    flex-direction: column;
-    align-items: stretch;
-  }
-
-  .chartHeader {
-    flex-direction: column;
-    gap: 0.5rem;
-  }
-
-  .filterChartButton {
-    width: 100%;
+  .chartContainer {
+    grid-template-columns: 1fr;
   }
 
   .modal {
@@ -731,17 +705,12 @@
     flex-direction: column;
   }
 
-  .sidebar {
-    width: 250px;
+  .searchInput {
+    max-width: 100%;
   }
-}
 
-/* Footer */
-.footer {
-  text-align: center;
-  padding: 1rem;
-  color: var(--text-color-secondary);
-  background: var(--section-background);
-  border-top: 1px solid rgba(0, 0, 0, 0.05);
-  width: 100%;
+  .pagination {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
 }
