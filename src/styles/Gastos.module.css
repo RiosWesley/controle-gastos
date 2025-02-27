@@ -14,6 +14,9 @@
   --card-background: #FFFFFF;
   --text-color: #334155;
   --text-color-secondary: #64748B;
+  --background-color-search: #525D6B;
+  --text-color-search: #FFFFFF
+
 
   /* Sombras */
   --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.08);
@@ -56,6 +59,7 @@
 .dark-mode .summary,
 .dark-mode .recentExpenses,
 .dark-mode .filters,
+.dark-mode .search,
 .dark-mode .charts,
 .dark-mode .footer,
 .dark-mode .modal {
@@ -302,6 +306,18 @@
   font-size: 1rem;
   color: var(--text-color);
   background: var(--background-color);
+  width: 100%;
+  max-width: 300px;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.dark-mode .searchInput {
+  padding: 0.75rem 1rem;
+  border: 1px solid var(--primary-color);
+  border-radius: 0.375rem;
+  font-size: 1rem;
+  color: var(--text-color-search);
+  background: var(--background-color-search);
   width: 100%;
   max-width: 300px;
   transition: border-color 0.2s ease, box-shadow 0.2s ease;
